@@ -6,7 +6,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<FormularioSolicitud />} />
+        <Route path="/" element={<FormularioSolicitud/>} /> {/*Ruta por defecto*/}
       </Routes>
     </BrowserRouter>
   );
