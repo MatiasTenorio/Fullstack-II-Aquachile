@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import fondo from '../assets/montana-sobre-mar.png';
+import logo from '../assets/aqua-chile-logo.png';
 
+const NOMBRES_CARGO = ['A', 'B', 'C'];
 const FAMILIAS_CARGO = ['Profesional A', 'Profesional B C'];
 
 function FormularioSolicitud() {
@@ -23,7 +26,7 @@ function FormularioSolicitud() {
   const validar = () => {
     const nuevosErrores = {};
     if (!formData.nombreCandidato.trim()) nuevosErrores.nombreCandidato = 'Este campo es obligatorio';
-    if (!formData.nombreCargo.trim()) nuevosErrores.nombreCargo = 'Este campo es obligatorio';
+    if (!formData.nombreCargo.trim()) nuevosErrores.nombreCargo = 'Selecciona una opción';
     if (!formData.familiaCargo) nuevosErrores.familiaCargo = 'Selecciona una opción';
     if (!formData.cv) nuevosErrores.cv = 'Debes adjuntar tu CV';
     setErrores(nuevosErrores);
@@ -39,11 +42,24 @@ function FormularioSolicitud() {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
-      <div className="card shadow p-4" style={{ maxWidth: '600px', width: '100%' }}>
+    <div
+      className="d-flex justify-content-center align-items-center"
+      style={{
+        position: 'fixed',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        overflowY: 'auto',
+        backgroundImage: `url(${fondo})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <div className="card shadow p-5 m-3" style={{ maxWidth: '900px', width: '100%' }}>
         <div className="text-center mb-3">
-          <h2 className="mb-0">AquaChile</h2>
-          <p className="text-muted">Formulario Psicolaboral</p>
+          <img src={logo} alt="AquaChile - Formulario Psicolaboral" className="img-fluid" style={{ maxWidth: '450px' }} />
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
@@ -66,14 +82,18 @@ function FormularioSolicitud() {
             <label htmlFor="nombreCargo" className="form-label">
               Nombre del cargo <span className="text-danger">*</span>
             </label>
-            <input
-              type="text"
-              className={`form-control ${errores.nombreCargo ? 'is-invalid' : ''}`}
+            <select
+              className={`form-select ${errores.nombreCargo ? 'is-invalid' : ''}`}
               id="nombreCargo"
               name="nombreCargo"
               value={formData.nombreCargo}
               onChange={handleChange}
-            />
+            >
+              <option value="">Seleccione una opción</option>
+              {NOMBRES_CARGO.map((cargo) => (
+                <option key={cargo} value={cargo}>{cargo}</option>
+              ))}
+            </select>
             {errores.nombreCargo && <div className="invalid-feedback">{errores.nombreCargo}</div>}
           </div>
 
