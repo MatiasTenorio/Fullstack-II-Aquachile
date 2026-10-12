@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import fondo from '../assets/montana-sobre-mar.png';
-import logo from '../assets/aqua-chile-logo.png';
+import logo from '../assets/aquachile-form-logo.png';
 
 const NOMBRES_CARGO = ['A', 'B', 'C'];
 const FAMILIAS_CARGO = ['Profesional A', 'Profesional B C'];
