@@ -1,5 +1,5 @@
 import { Outlet, Link } from 'react-router-dom';
-import logoBlanco from '../assets/aqua-chile-logo-blanco.png'; // ajusta el nombre si lo guardaste distinto
+import logoBlanco from '../assets/aquachile-white-logo.png'; // ajusta el nombre si lo guardaste distinto
 
 function MainLayout() {
   return (
