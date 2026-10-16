@@ -105,10 +105,10 @@ function HistorialSolicitudes() {
                 </td>
                 <td>
                   <button
-                    className="btn btn-sm d-flex align-items-center gap-2"
+                    className="BtnCVDownload"
                     style={{ backgroundColor: '#445664', color: '#FFFFFF' }}
                   >
-                    ⬇ Descargar
+                    Descargar
                   </button>
                 </td>
               </tr>

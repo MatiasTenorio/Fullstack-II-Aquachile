@@ -27,12 +27,14 @@ function Login() {
     <div
       className="d-flex justify-content-center align-items-center min-vh-100"
       style={{
-        background: 'linear-gradient(rgba(0,0,0,0.15), rgba(0,0,0,0.15)), url(/src/assets/hero.png) center/cover',
+        position: 'fixed',
+        inset: 0,
+        background:'url(/src/assets/fondo-login.jpg) center/cover'
       }}
     >
       <div className="card shadow p-4" style={{ maxWidth: '420px', width: '100%' }}>
         <div className="text-center mb-3">
-          <img src="/src/assets/aqua-chile-logo.png" alt="AquaChile" style={{ maxWidth: '220px' }} />
+          <img src="/src/assets/aquachile-logo.png" alt="AquaChile" style={{ maxWidth: '220px' }} />
         </div>
         <p className="text-muted mb-4">
           Inicia sesión para acceder a la lista de solicitudes
