@@ -17,7 +17,7 @@ function Login() {
     }
     const exito = login(usuario, password);
     if (exito) {
-      navigate('/');
+      navigate('/solicitudes');
     } else {
       setError('Usuario o contraseña incorrectos');
     }
