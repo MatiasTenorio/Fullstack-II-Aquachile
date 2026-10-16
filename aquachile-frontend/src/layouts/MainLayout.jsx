@@ -13,19 +13,6 @@ function MainLayout() {
         </Link>
 
         <div className="d-flex align-items-center gap-4">
-          <button
-            className="btn position-relative p-0 border-0 bg-transparent"
-            style={{ color: '#FFFFFF', fontSize: '1.3rem' }}
-            aria-label="Notificaciones"
-          >
-            🔔
-            <span
-              className="position-absolute top-0 start-100 translate-middle p-1 bg-info border border-light rounded-circle"
-            >
-              <span className="visually-hidden">Notificaciones nuevas</span>
-            </span>
-          </button>
-
           <div className="d-flex align-items-center gap-2" style={{ color: '#FFFFFF' }}>
             <div
               className="rounded-circle d-flex align-items-center justify-content-center"

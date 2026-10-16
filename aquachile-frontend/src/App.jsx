@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
@@ -11,8 +11,12 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Rutas públicas */}
+          <Route path="/" element={<Navigate to="/solicitudes/nueva" replace />} />
+          <Route path="/solicitudes/nueva" element={<FormularioSolicitud />} />
           <Route path="/login" element={<Login />} />
 
+          {/* Rutas protegidas */}
           <Route
             element={
               <ProtectedRoute>
@@ -20,10 +24,11 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/" element={<HistorialSolicitudes />} />
-            <Route path="/solicitudes/nueva" element={<FormularioSolicitud />} />
             <Route path="/solicitudes" element={<HistorialSolicitudes />} />
           </Route>
+
+          {/* Cualquier otra URL vuelve al formulario */}
+          <Route path="*" element={<Navigate to="/solicitudes/nueva" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
