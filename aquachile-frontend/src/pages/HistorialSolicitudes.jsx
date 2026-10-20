@@ -39,7 +39,7 @@ function HistorialSolicitudes() {
   });
 
   return (
-    <div className="container-fluid px-4 py-4">
+    <div className="container py-4">
       <h2 className="fw-bold" style={{ color: '#445664' }}>Historial de solicitudes</h2>
       <p className="text-muted">Revisa el listado de candidatos que han postulado a los distintos puestos de trabajo.</p>
 
