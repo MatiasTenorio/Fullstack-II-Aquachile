@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 import FormularioSolicitud from './pages/FormularioSolicitud';
 import HistorialSolicitudes from './pages/HistorialSolicitudes';
+import DetalleSolicitud from './pages/DetalleSolicitud';
 import Login from './pages/Login';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
             }
           >
             <Route path="/solicitudes" element={<HistorialSolicitudes />} />
+            <Route path="/solicitudes/:id" element={<DetalleSolicitud />} />
           </Route>
 
           {/* Cualquier otra URL vuelve al formulario */}

@@ -1,0 +1,133 @@
+.detalle-titulo {
+  color: #1b2f4b;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.detalle-subtitulo {
+  color: #445664;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid #445664;
+  display: flex;
+  flex-direction: column;
+  height: 75vh;
+}
+
+.panel-encabezado {
+  background: #8fb0c4;
+  border-bottom: 1px solid #445664;
+  position: relative;
+  padding: 0.3rem 0.5rem;
+  text-align: center;
+}
+
+.panel-encabezado h2 {
+  color: #1b2f4b;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.btn-volver {
+  background: #445664;
+  border: none;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  left: 4px;
+  padding: 0.2rem 0.6rem;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.panel-cuerpo {
+  flex: 1;
+  padding: 1rem;
+  overflow: auto;
+}
+
+.panel-visor {
+  padding: 0;
+}
+
+.candidato {
+  align-items: center;
+  display: flex;
+  gap: 0.8rem;
+  margin-bottom: 2rem;
+}
+
+.avatar {
+  align-items: center;
+  background: #0f1f33;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  font-weight: 700;
+  height: 52px;
+  justify-content: center;
+  width: 52px;
+}
+
+.candidato-email {
+  color: #445664;
+  font-size: 0.8rem;
+}
+
+.dato {
+  font-size: 0.9rem;
+  margin: 0 0 2.5rem 4rem;
+}
+
+.panel-acciones {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.8rem 1rem;
+}
+
+.badge-estado {
+  border: 1px solid #000000;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  min-width: 90px;
+  padding: 0.35rem 0.6rem;
+  text-align: center;
+}
+
+.estado-pendiente { background: #ff5c5c; }
+.estado-proceso { background: #ffd24d; }
+.estado-completo { background: #5cc47a; }
+
+.btn-accion {
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.7rem 1.1rem;
+  text-decoration: none;
+}
+
+.btn-accion:hover { color: #ffffff; opacity: 0.9; }
+.btn-actualizar { background: #1b2f4b; }
+.btn-descargar { background: #445664; }
+
+.cv-visor {
+  border: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.cv-visor-docx {
+  background: #e9ecef;
+  overflow: auto;
+}
