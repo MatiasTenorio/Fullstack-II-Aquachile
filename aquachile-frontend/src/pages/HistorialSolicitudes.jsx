@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { solicitudesMock } from '../data/solicitudes';
 
 const coloresEstado = {
-  Pendiente: { bg: '#f8d7da', text: '#842029' },
-  'En Proceso': { bg: '#fff3cd', text: '#664d03' },
-  Completo: { bg: '#d1e7dd', text: '#0f5132' },
+  "Pendiente": { bg: '#f8d7da', text: '#842029' },
+  "En Proceso": { bg: '#fff3cd', text: '#664d03' },
+  "Completo": { bg: '#d1e7dd', text: '#0f5132' },
 };
 
 function obtenerIniciales(nombreCompleto) {

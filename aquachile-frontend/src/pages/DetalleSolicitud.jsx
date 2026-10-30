@@ -5,9 +5,15 @@ import CvPreview from "../components/CvPreview";
 import "./DetalleSolicitud.css";
 
 const claseEstado = {
-  Pendiente: "estado-pendiente",
+  "Pendiente": "estado-pendiente",
   "En Proceso": "estado-proceso",
-  Completo: "estado-completo",
+  "Completo": "estado-completo",
+};
+
+const coloresEstado = {
+  "Pendiente": { bg: '#f8d7da', text: '#842029' },
+  "En Proceso": { bg: '#fff3cd', text: '#664d03' },
+  "Completo": { bg: '#d1e7dd', text: '#0f5132' },
 };
 
 export default function DetalleSolicitud() {
@@ -47,10 +53,17 @@ export default function DetalleSolicitud() {
         <div className="col-lg-6">
           <section className="panel">
             <header className="panel-encabezado">
-              <button className="btn-volver" onClick={() => navigate("/solicitudes")}>
-                ◀ Volver
-              </button>
-              <h2>Solicitud</h2>
+              <div className="position-relative d-flex align-items-center justify-content-center py-1 Volver" 
+              style={{ backgroundColor: '#8fb0c5' }}>
+                <button
+                  className="btn btn-sm position-absolute start-0 ms-30"
+                  style={{ backgroundColor: '#445664', color: '#FFFFFF' }}
+                  onClick={() => navigate(-1)}
+                >
+                  Volver
+                </button>
+                <h2 className="m-0 fw-bold" style={{ color: '#1b2f4b' }}>Solicitud</h2>
+              </div>
             </header>
 
             <div className="panel-cuerpo">
@@ -67,16 +80,30 @@ export default function DetalleSolicitud() {
             </div>
 
             <footer className="panel-acciones">
-              <span className={`badge-estado ${claseEstado[estado]}`}>{estado}</span>
-              <button className="btn-accion btn-actualizar" onClick={actualizarEstado}>
-                Actualizar Estado
-              </button>
+              <span
+                className={`badge rounded-pill px-3 py-2 ${claseEstado[estado]}`}
+                style={{
+                  backgroundColor: coloresEstado[estado]?.bg,
+                  color: coloresEstado[estado]?.text,
+                }}
+              >
+                {estado}
+              </span>
               <a
-                className="btn-accion btn-descargar"
+                className="btn btn-sm text-decoration-none ActualizarEstado"
+                style={{ backgroundColor: '#445664', color: '#FFFFFF' }}
+                onClick={actualizarEstado}
+              >
+                Actualizar Estado
+              </a>
+              <a
+                className="btn btn-sm text-decoration-none CVDownload"
                 href={solicitud.cv.url}
                 download={solicitud.cv.nombreArchivo}
+                style={{ backgroundColor: '#445664', color: '#FFFFFF' }}
+                onClick={(e) => e.stopPropagation()}
               >
-                Descargar CV
+                Descargar
               </a>
             </footer>
           </section>
