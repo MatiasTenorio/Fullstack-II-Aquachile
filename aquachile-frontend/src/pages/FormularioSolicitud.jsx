@@ -1,18 +1,29 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import fondo from '../assets/montana-sobre-mar.png';
 import logo from '../assets/aquachile-form-logo.png';
+import { ApiError, enviarSolicitudPublica } from '../services/api';
+import { NOMBRES_CARGO, FAMILIAS_CARGO } from '../data/catalogos';
 
-const NOMBRES_CARGO = ['A', 'B', 'C'];
-const FAMILIAS_CARGO = ['Profesional A', 'Profesional B C'];
+const EXTENSIONES_CV = ['pdf', 'doc', 'docx'];
+const TAMANO_MAXIMO_CV = 5 * 1024 * 1024; // 5 MB, el mismo límite del backend
+
+const FORMATO_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const FORMULARIO_VACIO = {
+  nombreCandidato: '',
+  correo: '',
+  nombreCargo: '',
+  familiaCargo: '',
+  cv: null,
+};
 
 function FormularioSolicitud() {
-  const [formData, setFormData] = useState({
-    nombreCandidato: '',
-    nombreCargo: '',
-    familiaCargo: '',
-    cv: null,
-  });
+  const [formData, setFormData] = useState(FORMULARIO_VACIO);
   const [errores, setErrores] = useState({});
+  const [enviando, setEnviando] = useState(false);
+  const [mensajeExito, setMensajeExito] = useState('');
+  const [errorGeneral, setErrorGeneral] = useState('');
+  const inputCv = useRef(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,18 +37,57 @@ function FormularioSolicitud() {
   const validar = () => {
     const nuevosErrores = {};
     if (!formData.nombreCandidato.trim()) nuevosErrores.nombreCandidato = 'Este campo es obligatorio';
+    if (!formData.correo.trim()) nuevosErrores.correo = 'Este campo es obligatorio';
+    else if (!FORMATO_CORREO.test(formData.correo.trim())) nuevosErrores.correo = 'Ingresa un correo válido, por ejemplo nombre@dominio.cl';
     if (!formData.nombreCargo.trim()) nuevosErrores.nombreCargo = 'Selecciona una opción';
     if (!formData.familiaCargo) nuevosErrores.familiaCargo = 'Selecciona una opción';
-    if (!formData.cv) nuevosErrores.cv = 'Debes adjuntar tu CV';
+    if (!formData.cv) {
+      nuevosErrores.cv = 'Debes adjuntar tu CV';
+    } else {
+      const extension = formData.cv.name.split('.').pop().toLowerCase();
+      if (!EXTENSIONES_CV.includes(extension)) nuevosErrores.cv = 'El CV debe ser un archivo PDF, DOC o DOCX';
+      else if (formData.cv.size > TAMANO_MAXIMO_CV) nuevosErrores.cv = 'El CV no puede superar los 5 MB';
+    }
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validar()) {
-      console.log('Solicitud enviada:', formData);
-      // Más adelante esto se conecta con el backend (Spring Boot)
+    setMensajeExito('');
+    setErrorGeneral('');
+    if (!validar()) return;
+
+    const datos = new FormData();
+    datos.append('nombreCandidato', formData.nombreCandidato.trim());
+    datos.append('correo', formData.correo.trim());
+    datos.append('cargo', formData.nombreCargo);
+    datos.append('familiaCargo', formData.familiaCargo);
+    datos.append('cv', formData.cv);
+
+    setEnviando(true);
+    try {
+      await enviarSolicitudPublica(datos);
+      setFormData(FORMULARIO_VACIO);
+      setErrores({});
+      if (inputCv.current) inputCv.current.value = '';
+      setMensajeExito('Tu solicitud fue enviada correctamente. ¡Gracias!');
+    } catch (error) {
+      // El backend nombra "cargo" al campo que aquí se llama nombreCargo
+      const camposBackend = error instanceof ApiError ? error.campos : {};
+      const erroresServidor = {};
+      if (camposBackend.nombreCandidato) erroresServidor.nombreCandidato = camposBackend.nombreCandidato;
+      if (camposBackend.correo) erroresServidor.correo = camposBackend.correo;
+      if (camposBackend.cargo) erroresServidor.nombreCargo = camposBackend.cargo;
+      if (camposBackend.familiaCargo) erroresServidor.familiaCargo = camposBackend.familiaCargo;
+
+      if (Object.keys(erroresServidor).length > 0) {
+        setErrores(erroresServidor);
+      } else {
+        setErrorGeneral(error.message);
+      }
+    } finally {
+      setEnviando(false);
     }
   };
 
@@ -62,6 +112,9 @@ function FormularioSolicitud() {
           <img src={logo} alt="AquaChile - Formulario Psicolaboral" className="img-fluid" style={{ maxWidth: '450px' }} />
         </div>
 
+        {mensajeExito && <div className="alert alert-success" role="alert">{mensajeExito}</div>}
+        {errorGeneral && <div className="alert alert-danger" role="alert">{errorGeneral}</div>}
+
         <form onSubmit={handleSubmit} noValidate>
           <div className="mb-3">
             <label htmlFor="nombreCandidato" className="form-label">
@@ -76,6 +129,22 @@ function FormularioSolicitud() {
               onChange={handleChange}
             />
             {errores.nombreCandidato && <div className="invalid-feedback">{errores.nombreCandidato}</div>}
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="correo" className="form-label">
+              Correo electrónico <span className="text-danger">*</span>
+            </label>
+            <input
+              type="email"
+              className={`form-control ${errores.correo ? 'is-invalid' : ''}`}
+              id="correo"
+              name="correo"
+              autoComplete="email"
+              value={formData.correo}
+              onChange={handleChange}
+            />
+            {errores.correo && <div className="invalid-feedback">{errores.correo}</div>}
           </div>
 
           <div className="mb-3">
@@ -126,12 +195,15 @@ function FormularioSolicitud() {
               id="cv"
               name="cv"
               accept=".pdf,.doc,.docx"
+              ref={inputCv}
               onChange={handleFileChange}
             />
             {errores.cv && <div className="invalid-feedback">{errores.cv}</div>}
           </div>
 
-          <button type="submit" className="btn btn-primary w-100">Enviar</button>
+          <button type="submit" className="btn btn-primary w-100" disabled={enviando}>
+            {enviando ? 'Enviando...' : 'Enviar'}
+          </button>
         </form>
       </div>
     </div>

@@ -1,36 +1,84 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { solicitudesMock } from '../data/solicitudes';
+import { useAuth } from '../context/AuthContext';
+import { ApiError, guardarArchivo } from '../services/api';
+import { ESTADOS_UI, FAMILIAS_CARGO, NOMBRES_CARGO } from '../data/catalogos';
 
-const coloresEstado = {
-  "Pendiente": { bg: '#f8d7da', text: '#842029' },
-  "En Proceso": { bg: '#fff3cd', text: '#664d03' },
-  "Completo": { bg: '#d1e7dd', text: '#0f5132' },
-};
+const TODAS_FAMILIAS = 'Todas las familias';
+const TODOS_CARGOS = 'Todos los cargos';
+const POR_PAGINA = 10;
 
 function obtenerIniciales(nombreCompleto) {
   const partes = nombreCompleto.trim().split(' ');
-  return (partes[0]?.[0] || '') + (partes[1]?.[0] || '');
+  return ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase();
 }
 
 function HistorialSolicitudes() {
   const navigate = useNavigate();
+  const { api, descargar } = useAuth();
+
   const [busqueda, setBusqueda] = useState('');
-  const [familiaFiltro, setFamiliaFiltro] = useState('Todas las familias');
-  const [cargoFiltro, setCargoFiltro] = useState('Todos los cargos');
+  const [busquedaAplicada, setBusquedaAplicada] = useState('');
+  const [familiaFiltro, setFamiliaFiltro] = useState(TODAS_FAMILIAS);
+  const [cargoFiltro, setCargoFiltro] = useState(TODOS_CARGOS);
 
-  const familias = ['Todas las familias', ...new Set(solicitudesMock.map((s) => s.familiaCargo))];
-  const cargos = ['Todos los cargos', ...new Set(solicitudesMock.map((s) => s.cargo))];
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
+  const [pagina, setPagina] = useState(1);
+  const [descargandoId, setDescargandoId] = useState(null);
 
-  const solicitudesFiltradas = solicitudesMock.filter((s) => {
-    const coincideBusqueda =
-      s.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      s.cargo.toLowerCase().includes(busqueda.toLowerCase()) ||
-      s.familiaCargo.toLowerCase().includes(busqueda.toLowerCase());
-    const coincideFamilia = familiaFiltro === 'Todas las familias' || s.familiaCargo === familiaFiltro;
-    const coincideCargo = cargoFiltro === 'Todos los cargos' || s.cargo === cargoFiltro;
-    return coincideBusqueda && coincideFamilia && coincideCargo;
-  });
+  // Espera a que la persona deje de escribir antes de consultar al backend.
+  useEffect(() => {
+    const espera = setTimeout(() => setBusquedaAplicada(busqueda.trim()), 300);
+    return () => clearTimeout(espera);
+  }, [busqueda]);
+
+  // Los filtros se aplican en el backend.
+  useEffect(() => {
+    let cancelado = false;
+    const params = new URLSearchParams();
+    if (busquedaAplicada) params.set('busqueda', busquedaAplicada);
+    if (familiaFiltro !== TODAS_FAMILIAS) params.set('familiaCargo', familiaFiltro);
+    if (cargoFiltro !== TODOS_CARGOS) params.set('cargo', cargoFiltro);
+    const consulta = params.toString();
+
+    setCargando(true);
+    api(`/solicitudes${consulta ? `?${consulta}` : ''}`)
+      .then((datos) => {
+        if (cancelado) return;
+        setSolicitudes(datos);
+        setError('');
+        setPagina(1);
+      })
+      .catch((e) => {
+        if (cancelado) return;
+        setError(e instanceof ApiError ? e.message : 'No se pudo cargar el historial.');
+      })
+      .finally(() => {
+        if (!cancelado) setCargando(false);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [api, busquedaAplicada, familiaFiltro, cargoFiltro]);
+
+  const totalPaginas = Math.max(1, Math.ceil(solicitudes.length / POR_PAGINA));
+  const visibles = solicitudes.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+
+  const descargarCv = async (e, solicitud) => {
+    e.stopPropagation();
+    setDescargandoId(solicitud.id);
+    try {
+      const { blob, nombre } = await descargar(`/solicitudes/${solicitud.id}/cv`);
+      guardarArchivo(blob, nombre);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo descargar el CV.');
+    } finally {
+      setDescargandoId(null);
+    }
+  };
 
   return (
     <div className="container py-4">
@@ -49,15 +97,17 @@ function HistorialSolicitudes() {
         </div>
         <div className="col-md-3">
           <select className="form-select" value={familiaFiltro} onChange={(e) => setFamiliaFiltro(e.target.value)}>
-            {familias.map((f) => <option key={f} value={f}>{f}</option>)}
+            {[TODAS_FAMILIAS, ...FAMILIAS_CARGO].map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
         </div>
         <div className="col-md-3">
           <select className="form-select" value={cargoFiltro} onChange={(e) => setCargoFiltro(e.target.value)}>
-            {cargos.map((c) => <option key={c} value={c}>{c}</option>)}
+            {[TODOS_CARGOS, ...NOMBRES_CARGO].map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>
+
+      {error && <div className="alert alert-danger py-2">{error}</div>}
 
       <div className="table-responsive">
         <table className="table align-middle">
@@ -71,70 +121,85 @@ function HistorialSolicitudes() {
             </tr>
           </thead>
           <tbody>
-            {solicitudesFiltradas.map((s) => (
-              <tr
-               key={s.id}
-                onClick={() => navigate(`/solicitudes/${s.id}`)}
-               style={{ cursor: 'pointer' }}>
-                <td>
-                  <div className="d-flex align-items-center gap-3">
-                    <div
-                      className="rounded-circle d-flex align-items-center justify-content-center fw-semibold"
-                      style={{ width: '40px', height: '40px', backgroundColor: '#445664', color: '#FFFFFF', flexShrink: 0 }}
+            {visibles.map((s) => {
+              const estado = ESTADOS_UI[s.estado] ?? { etiqueta: s.estado, bg: '#e9ecef', text: '#495057' };
+              return (
+                <tr
+                  key={s.id}
+                  onClick={() => navigate(`/solicitudes/${s.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <td>
+                    <div className="d-flex align-items-center gap-3">
+                      <div
+                        className="rounded-circle d-flex align-items-center justify-content-center fw-semibold"
+                        style={{ width: '40px', height: '40px', backgroundColor: '#445664', color: '#FFFFFF', flexShrink: 0 }}
+                      >
+                        {obtenerIniciales(s.candidatoNombre)}
+                      </div>
+                      <div>
+                        <div className="fw-semibold">{s.candidatoNombre}</div>
+                        <div className="text-muted small">{s.candidatoCorreo ?? 'Sin correo registrado'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{s.cargo}</td>
+                  <td>{s.familiaCargo}</td>
+                  <td>
+                    <span
+                      className="badge rounded-pill px-3 py-2"
+                      style={{ backgroundColor: estado.bg, color: estado.text }}
                     >
-                      {obtenerIniciales(s.nombre)}
-                    </div>
-                    <div>
-                      <div className="fw-semibold">{s.nombre}</div>
-                      <div className="text-muted small">{s.email}</div>
-                    </div>
-                  </div>
-                </td>
-                <td>{s.cargo}</td>
-                <td>{s.familiaCargo}</td>
-                <td>
-                  <span
-                    className="badge rounded-pill px-3 py-2"
-                    style={{ backgroundColor: coloresEstado[s.estado].bg, color: coloresEstado[s.estado].text }}
-                  >
-                    {s.estado}
-                  </span>
-                </td>
-                <td>
-                  <button
-                  className="CVDownload"
-                  style={{ backgroundColor: '#445664', color: '#FFFFFF' }}
-                  onClick={(e) => e.stopPropagation()}> Descargar </button>
-                </td>
-              </tr>
-            ))}
+                      {estado.etiqueta}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      className="CVDownload"
+                      style={{ backgroundColor: '#445664', color: '#FFFFFF' }}
+                      disabled={!s.cvDisponible || descargandoId === s.id}
+                      onClick={(e) => descargarCv(e, s)}
+                    >
+                      {descargandoId === s.id ? 'Descargando...' : 'Descargar'}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
-        {solicitudesFiltradas.length === 0 && (
+        {cargando && <p className="text-center text-muted">Cargando solicitudes...</p>}
+        {!cargando && !error && solicitudes.length === 0 && (
           <p className="text-center text-muted">No se encontraron solicitudes con esos criterios.</p>
         )}
       </div>
 
-      <nav className="d-flex justify-content-center mt-3">
-        <ul className="pagination">
-          <li className="page-item"><button className="page-link">‹</button></li>
-          {[1, 2, 3, 4, 5].map((n) => (
-            <li key={n} className="page-item">
-              <button
-                className="page-link"
-                style={n === 1 ? { backgroundColor: '#445664', borderColor: '#445664', color: '#FFFFFF' } : {}}
-              >
-                {n}
-              </button>
+      {totalPaginas > 1 && (
+        <nav className="d-flex justify-content-center mt-3">
+          <ul className="pagination">
+            <li className={`page-item ${pagina === 1 ? 'disabled' : ''}`}>
+              <button className="page-link" onClick={() => setPagina(pagina - 1)}>‹</button>
             </li>
-          ))}
-          <li className="page-item"><button className="page-link">›</button></li>
-        </ul>
-      </nav>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((n) => (
+              <li key={n} className="page-item">
+                <button
+                  className="page-link"
+                  onClick={() => setPagina(n)}
+                  style={n === pagina ? { backgroundColor: '#445664', borderColor: '#445664', color: '#FFFFFF' } : {}}
+                >
+                  {n}
+                </button>
+              </li>
+            ))}
+            <li className={`page-item ${pagina === totalPaginas ? 'disabled' : ''}`}>
+              <button className="page-link" onClick={() => setPagina(pagina + 1)}>›</button>
+            </li>
+          </ul>
+        </nav>
+      )}
     </div>
   );
 }
-
 
 export default HistorialSolicitudes;

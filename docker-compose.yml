@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: aquachile-db
+    environment:
+      POSTGRES_DB: aquachile_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aquachile_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./aquachile-backend
+    container_name: aquachile-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/aquachile_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-aquachile-solo-desarrollo-2026-no-usar-en-produccion}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      DRIVE_ENABLED: ${DRIVE_ENABLED:-false}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REFRESH_TOKEN: ${GOOGLE_REFRESH_TOKEN:-}
+      STORAGE_PATH: /app/almacen
+    volumes:
+      - archivos_data:/app/almacen
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
+  archivos_data:

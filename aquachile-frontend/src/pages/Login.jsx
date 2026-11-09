@@ -1,25 +1,35 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ApiError } from '../services/api';
 
 function Login() {
-  const [usuario, setUsuario] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [enviando, setEnviando] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!usuario.trim() || !password.trim()) {
-      setError('Completa usuario y contraseña');
+    if (!email.trim() || !password.trim()) {
+      setError('Completa correo y contraseña');
       return;
     }
-    const exito = login(usuario, password);
-    if (exito) {
+    setError('');
+    setEnviando(true);
+    try {
+      await login(email.trim(), password);
       navigate('/solicitudes');
-    } else {
-      setError('Usuario o contraseña incorrectos');
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setError('Correo o contraseña incorrectos');
+      } else {
+        setError(err instanceof ApiError ? err.message : 'No se pudo iniciar sesión. Intenta nuevamente.');
+      }
+    } finally {
+      setEnviando(false);
     }
   };
 
@@ -42,16 +52,17 @@ function Login() {
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="mb-3">
-            <label htmlFor="usuario" className="form-label">Usuario</label>
+            <label htmlFor="email" className="form-label">Correo</label>
             <div className="input-group">
-              <span className="input-group-text"><i className="bi bi-person"></i></span>
+              <span className="input-group-text"><i className="bi bi-envelope"></i></span>
               <input
-                type="text"
+                type="email"
                 className="form-control"
-                id="usuario"
-                placeholder="Ingresa tu usuario"
-                value={usuario}
-                onChange={(e) => setUsuario(e.target.value)}
+                id="email"
+                placeholder="Ingresa tu correo"
+                autoComplete="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
           </div>
@@ -64,6 +75,7 @@ function Login() {
                 type="password"
                 className="form-control"
                 id="password"
+                autoComplete="current-password"
                 placeholder="Ingresa tu contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -73,8 +85,8 @@ function Login() {
 
           {error && <div className="alert alert-danger py-2">{error}</div>}
 
-          <button type="submit" className="btn btn-dark w-100">
-            Ingresar <i className="bi bi-arrow-right"></i>
+          <button type="submit" className="btn btn-dark w-100" disabled={enviando}>
+            {enviando ? 'Ingresando...' : 'Ingresar'} <i className="bi bi-arrow-right"></i>
           </button>
         </form>
       </div>
