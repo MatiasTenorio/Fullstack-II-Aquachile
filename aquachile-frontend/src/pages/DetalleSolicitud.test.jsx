@@ -13,7 +13,7 @@ vi.mock('../components/CvPreview', () => ({ default: () => <div>Vista previa del
 const solicitud = {
   id: 5,
   candidato: { nombre: 'Ana Pérez', correo: 'ana@correo.cl' },
-  cargo: 'A',
+  cargo: 'Líder Desarrollo Producción',
   familiaCargo: 'Profesional A',
   fechaSolicitud: '2026-11-09',
   estado: 'PENDIENTE',
@@ -50,7 +50,7 @@ describe('DetalleSolicitud', () => {
     renderWithRouter();
     expect(await screen.findByText('Ana Pérez')).toBeInTheDocument();
     expect(screen.getByText('ana@correo.cl')).toBeInTheDocument();
-    expect(screen.getByText('Cargo: A')).toBeInTheDocument();
+    expect(screen.getByText('Cargo: Líder Desarrollo Producción')).toBeInTheDocument();
     expect(await screen.findByText('Vista previa del CV')).toBeInTheDocument();
   });
 

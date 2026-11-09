@@ -1,8 +1,18 @@
 // Textos y colores que el frontend muestra para los valores que maneja el backend.
 // Si quieres cambiar cómo se ve un estado o un rol, se cambia aquí y en ningún otro lugar.
 
-export const NOMBRES_CARGO = ['A', 'B', 'C'];
-export const FAMILIAS_CARGO = ['Profesional A', 'Profesional B C'];
+// Cada familia de cargo con los cargos que pertenecen a ella. Debe coincidir con CatalogoCargos.java del backend.
+export const CARGOS_POR_FAMILIA = {
+  'Profesional A': ['Líder Desarrollo Producción'],
+  'Profesional B C': ['Analista de Sistemas', 'Coordinador servicios generales'],
+  'Operario Calificado': ['Gruero'],
+  'Técnico B C': ['Asistente Bodega Planta', 'Operador Sala Control', 'Monitor Producción'],
+  'Técnico A': ['Tecnico Mantencion Senior'],
+  'Supervisor B': ['Supervisor Planta'],
+  'Jefatura': ['Jefe Area Piscicultura', 'Jefe de SSO'],
+};
+export const FAMILIAS_CARGO = Object.keys(CARGOS_POR_FAMILIA);
+export const NOMBRES_CARGO = Object.values(CARGOS_POR_FAMILIA).flat();
 
 // Clave = valor que envía el backend.
 export const ESTADOS_UI = {

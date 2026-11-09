@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import fondo from '../assets/montana-sobre-mar.png';
 import logo from '../assets/aquachile-form-logo.png';
 import { ApiError, enviarSolicitudPublica } from '../services/api';
-import { NOMBRES_CARGO, FAMILIAS_CARGO } from '../data/catalogos';
+import { CARGOS_POR_FAMILIA, FAMILIAS_CARGO } from '../data/catalogos';
 
 const EXTENSIONES_CV = ['pdf', 'doc', 'docx'];
 const TAMANO_MAXIMO_CV = 5 * 1024 * 1024; // 5 MB, el mismo límite del backend
@@ -27,7 +27,8 @@ function FormularioSolicitud() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Los cargos dependen de la familia: si cambia la familia, se vuelve a elegir el cargo
+    setFormData((prev) => ({ ...prev, [name]: value, ...(name === 'familiaCargo' ? { nombreCargo: '' } : {}) }));
   };
 
   const handleFileChange = (e) => {
@@ -148,27 +149,8 @@ function FormularioSolicitud() {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="nombreCargo" className="form-label">
-              Nombre del cargo <span className="text-danger">*</span>
-            </label>
-            <select
-              className={`form-select ${errores.nombreCargo ? 'is-invalid' : ''}`}
-              id="nombreCargo"
-              name="nombreCargo"
-              value={formData.nombreCargo}
-              onChange={handleChange}
-            >
-              <option value="">Seleccione una opción</option>
-              {NOMBRES_CARGO.map((cargo) => (
-                <option key={cargo} value={cargo}>{cargo}</option>
-              ))}
-            </select>
-            {errores.nombreCargo && <div className="invalid-feedback">{errores.nombreCargo}</div>}
-          </div>
-
-          <div className="mb-3">
             <label htmlFor="familiaCargo" className="form-label">
-              Familia del cargo <span className="text-danger">*</span>
+              Familia de cargo <span className="text-danger">*</span>
             </label>
             <select
               className={`form-select ${errores.familiaCargo ? 'is-invalid' : ''}`}
@@ -183,6 +165,26 @@ function FormularioSolicitud() {
               ))}
             </select>
             {errores.familiaCargo && <div className="invalid-feedback">{errores.familiaCargo}</div>}
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="nombreCargo" className="form-label">
+              Nombre del cargo <span className="text-danger">*</span>
+            </label>
+            <select
+              className={`form-select ${errores.nombreCargo ? 'is-invalid' : ''}`}
+              id="nombreCargo"
+              name="nombreCargo"
+              value={formData.nombreCargo}
+              onChange={handleChange}
+              disabled={!formData.familiaCargo}
+            >
+              <option value="">Seleccione una opción</option>
+              {(CARGOS_POR_FAMILIA[formData.familiaCargo] ?? []).map((cargo) => (
+                <option key={cargo} value={cargo}>{cargo}</option>
+              ))}
+            </select>
+            {errores.nombreCargo && <div className="invalid-feedback">{errores.nombreCargo}</div>}
           </div>
 
           <div className="mb-3">

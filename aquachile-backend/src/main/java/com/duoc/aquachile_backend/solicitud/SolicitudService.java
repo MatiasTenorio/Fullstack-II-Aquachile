@@ -32,6 +32,7 @@ public class SolicitudService {
 
     @Transactional
     public SolicitudResponse crear(SolicitudCreateRequest request) {
+        CatalogoCargos.validar(request.familiaCargo().trim(), request.cargo().trim());
         boolean conCandidatoExistente = request.candidatoId() != null;
         boolean conCandidatoNuevo = request.candidato() != null;
         if (conCandidatoExistente == conCandidatoNuevo) {

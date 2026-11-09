@@ -1,0 +1,31 @@
+.cv-pdf {
+  border: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.cv-docx-visor {
+  background: #e9ecef;
+  height: 100%;
+  overflow: auto;
+  width: 100%;
+}
+
+.cv-docx-marco {
+  margin: 0 auto;
+}
+
+.cv-docx-contenido {
+  transform-origin: top left;
+  width: max-content;
+}
+
+/* docx-preview pinta un fondo gris y un margen alrededor de la hoja: aquí se quitan */
+.cv-docx-contenido .docx-wrapper {
+  background: transparent;
+  padding: 0;
+}
+
+.cv-docx-contenido .docx-wrapper > section.docx {
+  margin-bottom: 12px;
+}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiError, guardarArchivo } from '../services/api';
-import { ESTADOS_UI, FAMILIAS_CARGO, NOMBRES_CARGO } from '../data/catalogos';
+import { ESTADOS_UI, FAMILIAS_CARGO, NOMBRES_CARGO, CARGOS_POR_FAMILIA } from '../data/catalogos';
 
 const TODAS_FAMILIAS = 'Todas las familias';
 const TODOS_CARGOS = 'Todos los cargos';
@@ -64,6 +64,14 @@ function HistorialSolicitudes() {
     };
   }, [api, busquedaAplicada, familiaFiltro, cargoFiltro]);
 
+  // Si hay una familia elegida, el filtro de cargo solo muestra los cargos de esa familia
+  const cargosFiltro = familiaFiltro === TODAS_FAMILIAS ? NOMBRES_CARGO : CARGOS_POR_FAMILIA[familiaFiltro];
+
+  const cambiarFamiliaFiltro = (familia) => {
+    setFamiliaFiltro(familia);
+    setCargoFiltro(TODOS_CARGOS);
+  };
+
   const totalPaginas = Math.max(1, Math.ceil(solicitudes.length / POR_PAGINA));
   const visibles = solicitudes.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
@@ -96,13 +104,13 @@ function HistorialSolicitudes() {
           />
         </div>
         <div className="col-md-3">
-          <select className="form-select" value={familiaFiltro} onChange={(e) => setFamiliaFiltro(e.target.value)}>
+          <select className="form-select" value={familiaFiltro} onChange={(e) => cambiarFamiliaFiltro(e.target.value)}>
             {[TODAS_FAMILIAS, ...FAMILIAS_CARGO].map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
         </div>
         <div className="col-md-3">
           <select className="form-select" value={cargoFiltro} onChange={(e) => setCargoFiltro(e.target.value)}>
-            {[TODOS_CARGOS, ...NOMBRES_CARGO].map((c) => <option key={c} value={c}>{c}</option>)}
+            {[TODOS_CARGOS, ...cargosFiltro].map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>

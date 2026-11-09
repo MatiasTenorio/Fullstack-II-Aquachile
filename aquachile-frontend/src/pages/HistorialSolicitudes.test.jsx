@@ -8,8 +8,8 @@ const { auth } = vi.hoisted(() => ({ auth: { api: vi.fn(), descargar: vi.fn() } 
 vi.mock('../context/AuthContext', () => ({ useAuth: () => auth }));
 
 const solicitudes = [
-  { id: 1, candidatoNombre: 'Ana Pérez', candidatoCorreo: 'ana@correo.cl', cargo: 'A', familiaCargo: 'Profesional A', estado: 'PENDIENTE', cvDisponible: true },
-  { id: 2, candidatoNombre: 'Luis Soto', candidatoCorreo: 'luis@correo.cl', cargo: 'B', familiaCargo: 'Profesional B C', estado: 'FINALIZADO', cvDisponible: false },
+  { id: 1, candidatoNombre: 'Ana Pérez', candidatoCorreo: 'ana@correo.cl', cargo: 'Líder Desarrollo Producción', familiaCargo: 'Profesional A', estado: 'PENDIENTE', cvDisponible: true },
+  { id: 2, candidatoNombre: 'Luis Soto', candidatoCorreo: 'luis@correo.cl', cargo: 'Analista de Sistemas', familiaCargo: 'Profesional B C', estado: 'FINALIZADO', cvDisponible: false },
 ];
 
 function renderWithRouter() {

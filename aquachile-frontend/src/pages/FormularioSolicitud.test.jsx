@@ -20,6 +20,17 @@ describe('FormularioSolicitud', () => {
     expect(screen.getByText('Debes adjuntar tu CV')).toBeInTheDocument();
   });
 
+  it('muestra solo los cargos de la familia elegida', async () => {
+    // FormularioSolicitud
+    // El cargo parte deshabilitado y luego lista solo los cargos de la familia
+    const user = userEvent.setup();
+    render(<FormularioSolicitud />);
+    expect(screen.getByLabelText(/nombre del cargo/i)).toBeDisabled();
+    await user.selectOptions(screen.getByLabelText(/familia de cargo/i), 'Jefatura');
+    expect(screen.getByRole('option', { name: 'Jefe de SSO' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Gruero' })).not.toBeInTheDocument();
+  });
+
   it('rechaza un CV con formato inválido', async () => {
     // FormularioSolicitud
     // Muestra "El CV debe ser un archivo PDF, DOC o DOCX"
@@ -38,8 +49,8 @@ describe('FormularioSolicitud', () => {
     render(<FormularioSolicitud />);
     await user.type(screen.getByLabelText(/nombre del candidato/i), 'Ana Pérez');
     await user.type(screen.getByLabelText(/correo electrónico/i), 'ana@correo.cl');
-    await user.selectOptions(screen.getByLabelText(/nombre del cargo/i), 'A');
-    await user.selectOptions(screen.getByLabelText(/familia del cargo/i), 'Profesional A');
+    await user.selectOptions(screen.getByLabelText(/familia de cargo/i), 'Profesional A');
+    await user.selectOptions(screen.getByLabelText(/nombre del cargo/i), 'Líder Desarrollo Producción');
     await user.upload(screen.getByLabelText(/cargue su cv/i), new File(['x'], 'cv.pdf', { type: 'application/pdf' }));
     await user.click(screen.getByRole('button', { name: 'Enviar' }));
     expect(enviarSolicitudPublica).toHaveBeenCalledTimes(1);
