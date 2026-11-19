@@ -37,6 +37,12 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
+		<!-- Envio de correos (codigos OTP de contrasena) por SMTP -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
 		<!-- Healthcheck para GitHub Actions: /actuator/health -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

@@ -24,13 +24,15 @@ public class SolicitudArchivoController {
     private final SolicitudArchivoService archivoService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize(Permisos.ANALISTA_O_ADMIN)
+    @PreAuthorize(Permisos.SOLO_ANALISTA)
     public SolicitudResponse subir(@PathVariable Long solicitudId,
-                                   @RequestParam("archivo") MultipartFile archivo) {
-        return archivoService.subirCv(solicitudId, archivo);
+                                   @RequestParam("archivo") MultipartFile archivo,
+                                   @AuthenticationPrincipal Jwt jwt) {
+        return archivoService.reemplazarCv(solicitudId, archivo, UsuarioActual.from(jwt));
     }
 
     @GetMapping
+    @PreAuthorize(Permisos.ANALISTA_O_EVALUADOR)
     public ResponseEntity<byte[]> descargar(@PathVariable Long solicitudId, @AuthenticationPrincipal Jwt jwt) {
         return archivoService.descargarCv(solicitudId, UsuarioActual.from(jwt)).comoRespuesta();
     }

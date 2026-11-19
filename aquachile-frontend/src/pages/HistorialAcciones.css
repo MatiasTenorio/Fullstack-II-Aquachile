@@ -1,0 +1,119 @@
+/* Historial de acciones: lista de usuarios a la izquierda y acciones del elegido a la derecha. */
+.acciones-usuarios {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: calc(100vh - 14rem);
+  overflow-y: auto;
+}
+
+.acciones-usuario {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #d6dde2;
+  border-radius: 8px;
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  width: 100%;
+}
+
+.acciones-usuario:hover {
+  border-color: #8fb0c4;
+}
+
+.acciones-usuario.seleccionado {
+  background: #f4f7f9;
+  border-color: #445664;
+  box-shadow: inset 3px 0 0 #445664;
+}
+
+.acciones-avatar {
+  align-items: center;
+  background: #445664;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.acciones-estado {
+  background: #e9ecef;
+  border-radius: 999px;
+  color: #495057;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+}
+
+.acciones-estado.activo {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.acciones-panel {
+  border: 1px solid #d6dde2;
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+}
+
+.acciones-vacio {
+  align-items: center;
+  border: 1px dashed #c3ccd3;
+  border-radius: 8px;
+  color: #6c757d;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.acciones-vacio i {
+  font-size: 2rem;
+}
+
+.acciones-lista {
+  border-left: 2px solid #8fb0c4;
+  font-size: 0.9rem;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0 0 0 1rem;
+}
+
+.acciones-lista li {
+  margin-bottom: 0.9rem;
+  position: relative;
+}
+
+.acciones-lista li::before {
+  background: #445664;
+  border-radius: 50%;
+  content: '';
+  height: 8px;
+  left: calc(-1rem - 5px);
+  position: absolute;
+  top: 0.4rem;
+  width: 8px;
+}
+
+.acciones-fecha {
+  color: #445664;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.acciones-motivo {
+  background: #fff8e6;
+  border-left: 3px solid #e0a800;
+  border-radius: 4px;
+  margin-top: 0.3rem;
+  padding: 0.35rem 0.6rem;
+}

@@ -1,11 +1,14 @@
 package com.duoc.aquachile_backend.candidatos;
 
 import com.duoc.aquachile_backend.auth.Permisos;
+import com.duoc.aquachile_backend.auth.UsuarioActual;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/candidatos")
 @RequiredArgsConstructor
+@PreAuthorize(Permisos.SOLO_ANALISTA)
 public class CandidatoController {
 
     private final CandidatoService candidatoService;
@@ -36,21 +40,19 @@ public class CandidatoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize(Permisos.ANALISTA_O_ADMIN)
-    public CandidatoResponse crear(@Valid @RequestBody CandidatoRequest request) {
-        return candidatoService.crear(request);
+    public CandidatoResponse crear(@Valid @RequestBody CandidatoRequest request, @AuthenticationPrincipal Jwt jwt) {
+        return candidatoService.crear(request, UsuarioActual.from(jwt));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize(Permisos.ANALISTA_O_ADMIN)
-    public CandidatoResponse actualizar(@PathVariable Long id, @Valid @RequestBody CandidatoRequest request) {
-        return candidatoService.actualizar(id, request);
+    public CandidatoResponse actualizar(@PathVariable Long id, @Valid @RequestBody CandidatoRequest request,
+                                        @AuthenticationPrincipal Jwt jwt) {
+        return candidatoService.actualizar(id, request, UsuarioActual.from(jwt));
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize(Permisos.ANALISTA_O_ADMIN)
-    public void eliminar(@PathVariable Long id) {
-        candidatoService.eliminar(id);
+    public void eliminar(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        candidatoService.eliminar(id, UsuarioActual.from(jwt));
     }
 }

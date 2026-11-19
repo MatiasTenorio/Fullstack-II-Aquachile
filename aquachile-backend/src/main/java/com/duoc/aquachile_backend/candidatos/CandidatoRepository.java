@@ -8,6 +8,6 @@ public interface CandidatoRepository extends JpaRepository<Candidato, Long> {
 
     List<Candidato> findByNombreContainingIgnoreCaseOrderByNombreAsc(String nombre);
 
-    /** El candidato mas antiguo registrado con ese correo (sin distinguir mayusculas). */
+    /** El candidato registrado con ese correo (sin distinguir mayusculas), para no duplicarlo. */
     Optional<Candidato> findFirstByCorreoIgnoreCaseOrderByIdAsc(String correo);
 }

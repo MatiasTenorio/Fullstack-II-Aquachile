@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { renderAsync } from "docx-preview";
+import { adaptarCuadrosDeTexto } from "../utils/docxCuadrosTexto";
 import "./CvPreview.css";
 
 // Muestra el CV dentro de la caja: PDF con el visor del navegador y DOCX dibujado con docx-preview,
@@ -25,6 +26,8 @@ function VisorDocx({ url }) {
   const marco = useRef(null); // tiene el tamaño del documento ya reducido
   const contenido = useRef(null); // aquí docx-preview dibuja el documento a tamaño real
   const [error, setError] = useState("");
+  // true si el documento usaba cuadros de texto flotantes y se muestra reordenado
+  const [adaptado, setAdaptado] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -42,10 +45,14 @@ function VisorDocx({ url }) {
     };
 
     setError("");
+    setAdaptado(false);
     fetch(url)
       .then((r) => r.blob())
-      .then((blob) => {
+      // docx-preview no sabe ubicar los cuadros de texto flotantes: se pasan a párrafos normales antes de dibujar
+      .then((original) => adaptarCuadrosDeTexto(original))
+      .then(({ blob, adaptado: fueAdaptado }) => {
         if (cancelado) return null;
+        setAdaptado(fueAdaptado);
         contenido.current.innerHTML = "";
         return renderAsync(blob, contenido.current, null, { className: "docx", inWrapper: true });
       })
@@ -68,6 +75,12 @@ function VisorDocx({ url }) {
   return (
     <div className="cv-docx-visor" ref={visor}>
       {error && <p className="text-danger p-3 m-0">{error}</p>}
+      {adaptado && !error && (
+        <p className="cv-docx-aviso">
+          Vista adaptada: este CV usa cuadros de texto, así que se muestra su contenido en orden. Para ver el diseño
+          original, usa Descargar CV.
+        </p>
+      )}
       <div className="cv-docx-marco" ref={marco}>
         <div className="cv-docx-contenido" ref={contenido} />
       </div>

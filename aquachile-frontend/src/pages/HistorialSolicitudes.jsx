@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiError, guardarArchivo } from '../services/api';
-import { ESTADOS_UI, FAMILIAS_CARGO, NOMBRES_CARGO, CARGOS_POR_FAMILIA } from '../data/catalogos';
+import { ESTADOS_CERRADOS, ESTADOS_UI, FAMILIAS_CARGO, NOMBRES_CARGO, CARGOS_POR_FAMILIA, ROLES } from '../data/catalogos';
+import { formatearFechaHora } from '../utils/fechas';
 
 const TODAS_FAMILIAS = 'Todas las familias';
 const TODOS_CARGOS = 'Todos los cargos';
+const TODOS_ESTADOS = 'Todos los estados';
 const POR_PAGINA = 10;
 
 function obtenerIniciales(nombreCompleto) {
@@ -15,12 +17,18 @@ function obtenerIniciales(nombreCompleto) {
 
 function HistorialSolicitudes() {
   const navigate = useNavigate();
-  const { api, descargar } = useAuth();
+  const { api, descargar, usuarioActual } = useAuth();
+  const esAnalista = usuarioActual?.rol === ROLES.ANALISTA;
+  const esEvaluador = usuarioActual?.rol === ROLES.EVALUADOR;
 
   const [busqueda, setBusqueda] = useState('');
   const [busquedaAplicada, setBusquedaAplicada] = useState('');
   const [familiaFiltro, setFamiliaFiltro] = useState(TODAS_FAMILIAS);
   const [cargoFiltro, setCargoFiltro] = useState(TODOS_CARGOS);
+  // El dashboard enlaza con ?estado=PENDIENTE (u otro) para abrir el listado ya filtrado
+  const [parametros] = useSearchParams();
+  const estadoInicial = parametros.get('estado');
+  const [estadoFiltro, setEstadoFiltro] = useState(ESTADOS_UI[estadoInicial] ? estadoInicial : TODOS_ESTADOS);
 
   const [solicitudes, setSolicitudes] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -41,6 +49,7 @@ function HistorialSolicitudes() {
     if (busquedaAplicada) params.set('busqueda', busquedaAplicada);
     if (familiaFiltro !== TODAS_FAMILIAS) params.set('familiaCargo', familiaFiltro);
     if (cargoFiltro !== TODOS_CARGOS) params.set('cargo', cargoFiltro);
+    if (estadoFiltro !== TODOS_ESTADOS) params.set('estado', estadoFiltro);
     const consulta = params.toString();
 
     setCargando(true);
@@ -62,7 +71,7 @@ function HistorialSolicitudes() {
     return () => {
       cancelado = true;
     };
-  }, [api, busquedaAplicada, familiaFiltro, cargoFiltro]);
+  }, [api, busquedaAplicada, familiaFiltro, cargoFiltro, estadoFiltro]);
 
   // Si hay una familia elegida, el filtro de cargo solo muestra los cargos de esa familia
   const cargosFiltro = familiaFiltro === TODAS_FAMILIAS ? NOMBRES_CARGO : CARGOS_POR_FAMILIA[familiaFiltro];
@@ -90,11 +99,26 @@ function HistorialSolicitudes() {
 
   return (
     <div className="container py-4">
-      <h2 className="fw-bold" style={{ color: '#445664' }}>Historial de solicitudes</h2>
-      <p className="text-muted">Revisa el listado de candidatos que han postulado a los distintos puestos de trabajo.</p>
+      <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div className="text-start">
+          <h2 className="fw-bold" style={{ color: '#445664' }}>
+            {esEvaluador ? 'Mis solicitudes asignadas' : 'Historial de solicitudes'}
+          </h2>
+          <p className="text-muted">
+            {esEvaluador
+              ? 'Estas son las solicitudes de evaluación que tienes a tu cargo.'
+              : 'Revisa las solicitudes de evaluación psicolaboral y su estado.'}
+          </p>
+        </div>
+        {esAnalista && (
+          <Link to="/solicitudes/nueva" className="btn" style={{ backgroundColor: '#445664', color: '#FFFFFF' }}>
+            <i className="bi bi-plus-lg"></i> Nueva solicitud
+          </Link>
+        )}
+      </div>
 
       <div className="row g-2 mb-3">
-        <div className="col-md-6">
+        <div className="col-md-3">
           <input
             type="text"
             className="form-control"
@@ -113,6 +137,17 @@ function HistorialSolicitudes() {
             {[TODOS_CARGOS, ...cargosFiltro].map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
+        <div className="col-md-3">
+          <select
+            className="form-select"
+            aria-label="Filtrar por estado"
+            value={estadoFiltro}
+            onChange={(e) => setEstadoFiltro(e.target.value)}
+          >
+            <option value={TODOS_ESTADOS}>{TODOS_ESTADOS}</option>
+            {Object.entries(ESTADOS_UI).map(([valor, ui]) => <option key={valor} value={valor}>{ui.etiqueta}</option>)}
+          </select>
+        </div>
       </div>
 
       {error && <div className="alert alert-danger py-2">{error}</div>}
@@ -124,6 +159,8 @@ function HistorialSolicitudes() {
               <th>Candidato</th>
               <th>Cargo</th>
               <th>Familia del Cargo</th>
+              <th>Responsable</th>
+              <th>Entrevista</th>
               <th>Estado</th>
               <th>CV</th>
             </tr>
@@ -153,6 +190,12 @@ function HistorialSolicitudes() {
                   </td>
                   <td>{s.cargo}</td>
                   <td>{s.familiaCargo}</td>
+                  <td>{s.responsableNombre ?? <span className="text-muted">Sin asignar</span>}</td>
+                  <td>
+                    {s.entrevistaInicio
+                      ? formatearFechaHora(s.entrevistaInicio)
+                      : <span className="text-muted">{ESTADOS_CERRADOS.includes(s.estado) ? '—' : 'Sin agendar'}</span>}
+                  </td>
                   <td>
                     <span
                       className="badge rounded-pill px-3 py-2"

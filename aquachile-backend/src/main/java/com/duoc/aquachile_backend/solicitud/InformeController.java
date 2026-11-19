@@ -24,7 +24,7 @@ public class InformeController {
     private final InformeService informeService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize(Permisos.ANALISTA_EVALUADOR_O_ADMIN)
+    @PreAuthorize(Permisos.SOLO_EVALUADOR)
     public SolicitudResponse subir(@PathVariable Long solicitudId,
                                    @RequestParam("archivo") MultipartFile archivo,
                                    @AuthenticationPrincipal Jwt jwt) {
@@ -32,6 +32,7 @@ public class InformeController {
     }
 
     @GetMapping
+    @PreAuthorize(Permisos.ANALISTA_O_EVALUADOR)
     public ResponseEntity<byte[]> descargar(@PathVariable Long solicitudId, @AuthenticationPrincipal Jwt jwt) {
         return informeService.descargar(solicitudId, UsuarioActual.from(jwt)).comoRespuesta();
     }

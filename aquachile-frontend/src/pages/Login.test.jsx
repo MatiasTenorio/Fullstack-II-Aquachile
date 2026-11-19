@@ -12,7 +12,7 @@ function renderWithRouter() {
     <MemoryRouter initialEntries={['/login']}>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/solicitudes" element={<h1>Historial</h1>} />
+        <Route path="/dashboard" element={<h1>Inicio</h1>} />
       </Routes>
     </MemoryRouter>
   );
@@ -38,9 +38,9 @@ describe('Login', () => {
     expect(login).not.toHaveBeenCalled();
   });
 
-  it('inicia sesión y navega al historial', async () => {
+  it('inicia sesión y navega al dashboard', async () => {
     // Login
-    // Llama a login con los datos y navega a /solicitudes
+    // Llama a login con los datos y navega a /dashboard
     login.mockResolvedValue({});
     const user = userEvent.setup();
     renderWithRouter();
@@ -48,6 +48,6 @@ describe('Login', () => {
     await user.type(screen.getByLabelText('Contraseña'), 'Aqua2026!');
     await user.click(screen.getByRole('button', { name: /ingresar/i }));
     expect(login).toHaveBeenCalledWith('analista@aquachile.test', 'Aqua2026!');
-    expect(await screen.findByRole('heading', { name: 'Historial' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Inicio' })).toBeInTheDocument();
   });
 });

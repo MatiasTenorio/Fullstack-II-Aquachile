@@ -1,0 +1,108 @@
+/* Página de inicio: accesos rápidos, contadores y próximas entrevistas. */
+.inicio-titulo {
+  color: #445664;
+  font-weight: 700;
+}
+
+.inicio-seccion {
+  color: #1b2f4b;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 1.6rem 0 0.7rem;
+}
+
+.acceso-rapido {
+  align-items: center;
+  background: #445664;
+  border-radius: 10px;
+  color: #ffffff;
+  display: flex;
+  gap: 0.8rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.acceso-rapido:hover {
+  background: #1b2f4b;
+  color: #ffffff;
+}
+
+.acceso-rapido i {
+  font-size: 1.5rem;
+}
+
+.acceso-rapido .titulo {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.acceso-rapido .detalle {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.contador {
+  border: 1px solid #d6dde2;
+  border-radius: 10px;
+  color: inherit;
+  display: block;
+  height: 100%;
+  padding: 0.8rem 1rem;
+  text-decoration: none;
+}
+
+a.contador:hover {
+  border-color: #8fb0c4;
+  box-shadow: 0 2px 8px rgba(27, 47, 75, 0.12);
+  color: inherit;
+}
+
+.contador .numero {
+  color: #1b2f4b;
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.contador .etiqueta {
+  color: #445664;
+  font-size: 0.85rem;
+}
+
+.contador .marca {
+  border-radius: 50%;
+  display: inline-block;
+  height: 10px;
+  margin-right: 0.35rem;
+  width: 10px;
+}
+
+.proxima-entrevista {
+  align-items: center;
+  border: 1px solid #d6dde2;
+  border-radius: 8px;
+  color: inherit;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  text-decoration: none;
+}
+
+.proxima-entrevista:hover {
+  border-color: #8fb0c4;
+  color: inherit;
+}
+
+.proxima-entrevista .cuando {
+  color: #1b2f4b;
+  font-weight: 700;
+  min-width: 9.5rem;
+}
+
+.proxima-entrevista .detalle {
+  color: #445664;
+  font-size: 0.85rem;
+}

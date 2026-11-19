@@ -25,7 +25,7 @@ public class Solicitud {
     @JoinColumn(name = "candidato_id", nullable = false)
     private Candidato candidato;
 
-    /** Texto libre, decision del equipo para simplificar el MVP. */
+    /** Debe pertenecer a la familia de cargo (ver CatalogoCargos). */
     @Column(nullable = false, length = 160)
     private String cargo;
 
@@ -43,9 +43,20 @@ public class Solicitud {
     @Column(nullable = false, length = 20)
     private EstadoSolicitud estado = EstadoSolicitud.PENDIENTE;
 
+    /** Estado que tenia antes de pausarse (solo tiene valor mientras esta EN_PAUSA). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_previo", length = 20)
+    private EstadoSolicitud estadoPrevio;
+
+    /** Profesional evaluador a cargo de la solicitud; lo elige el analista al crearla. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "responsable_id")
     private Usuario responsable;
+
+    /** Analista que creo la solicitud; vacio en las anteriores a la migracion V9. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "analista_id")
+    private Usuario analista;
 
     /** Id en Google Drive del CV del candidato para esta solicitud. */
     @Column(name = "cv_drive_file_id")

@@ -1,0 +1,133 @@
+/* Estructura general: barra lateral fija a la izquierda y el contenido a la derecha. */
+.app-layout {
+  background: #ffffff;
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-sidebar {
+  background: #445664;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 100vh;
+  position: sticky;
+  text-align: left;
+  top: 0;
+  width: 232px;
+}
+
+.app-sidebar-logo {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  display: block;
+  padding: 1.1rem 1.25rem;
+}
+
+.app-sidebar-logo img {
+  height: 34px;
+}
+
+.app-sidebar-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.2rem;
+  overflow-y: auto;
+  padding: 0.9rem 0.6rem;
+}
+
+.app-sidebar-enlace {
+  align-items: center;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  font-size: 0.95rem;
+  gap: 0.7rem;
+  padding: 0.55rem 0.75rem;
+  text-decoration: none;
+}
+
+.app-sidebar-enlace:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.app-sidebar-enlace.activo {
+  background: rgba(255, 255, 255, 0.16);
+  border-left-color: #8fb0c4;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.app-sidebar-usuario {
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.9rem 1rem;
+}
+
+.app-sidebar-usuario .nombre {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.app-sidebar-usuario .rol {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.app-contenido {
+  flex: 1;
+  min-width: 0; /* permite que las tablas anchas hagan scroll dentro del contenido */
+}
+
+/* Pantallas angostas: la barra lateral pasa a ser una barra superior con los enlaces en fila. */
+@media (max-width: 991.98px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    height: auto;
+    position: static;
+    width: 100%;
+  }
+
+  .app-sidebar-logo {
+    border-bottom: none;
+    padding: 0.7rem 1rem;
+  }
+
+  /* Primera fila: logo a la izquierda y usuario a la derecha. Segunda fila: los enlaces. */
+  .app-sidebar-nav {
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    flex-basis: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    order: 3;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .app-sidebar-usuario {
+    align-items: center;
+    border-top: none;
+    display: flex;
+    gap: 0.8rem;
+    margin-left: auto;
+    padding: 0.5rem 1rem;
+  }
+
+  .app-sidebar-usuario > div {
+    margin-bottom: 0 !important;
+    text-align: right;
+  }
+
+  .app-sidebar-usuario .btn {
+    white-space: nowrap;
+    width: auto !important;
+  }
+}

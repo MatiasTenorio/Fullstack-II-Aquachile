@@ -1,0 +1,131 @@
+/* Calendario mensual de entrevistas. */
+.calendario-barra {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.calendario-mes {
+  color: #1b2f4b;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0.4rem;
+  min-width: 11rem;
+}
+
+.calendario-google {
+  align-items: center;
+  background: #f4f7f9;
+  border: 1px solid #d6dde2;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.9rem;
+}
+
+.calendario-grilla {
+  border-left: 1px solid #d6dde2;
+  border-top: 1px solid #d6dde2;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendario-nombre-dia {
+  background: #8fb0c4;
+  border-bottom: 1px solid #d6dde2;
+  border-right: 1px solid #d6dde2;
+  color: #1b2f4b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.3rem;
+  text-align: center;
+}
+
+.calendario-dia {
+  background: #ffffff;
+  border: none;
+  border-bottom: 1px solid #d6dde2;
+  border-right: 1px solid #d6dde2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 92px;
+  padding: 0.25rem;
+  text-align: left;
+}
+
+.calendario-dia:hover {
+  background: #f4f7f9;
+}
+
+.calendario-dia.otro-mes {
+  background: #f8f9fa;
+  color: #9aa5ad;
+}
+
+.calendario-dia.seleccionado {
+  box-shadow: inset 0 0 0 2px #445664;
+}
+
+.calendario-numero {
+  align-self: flex-start;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 600;
+  height: 1.5rem;
+  line-height: 1.5rem;
+  text-align: center;
+  width: 1.5rem;
+}
+
+.calendario-dia.hoy .calendario-numero {
+  background: #445664;
+  color: #ffffff;
+}
+
+.calendario-evento {
+  border-radius: 4px;
+  font-size: 0.72rem;
+  overflow: hidden;
+  padding: 1px 4px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendario-mas {
+  color: #445664;
+  font-size: 0.72rem;
+}
+
+.calendario-panel {
+  border: 1px solid #d6dde2;
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+}
+
+.calendario-panel-titulo {
+  color: #1b2f4b;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.7rem;
+}
+
+.calendario-entrevista {
+  border-bottom: 1px solid #e9ecef;
+  font-size: 0.88rem;
+  padding: 0.55rem 0;
+}
+
+.calendario-entrevista:last-of-type {
+  border-bottom: none;
+}
+
+.calendario-entrevista .hora {
+  color: #1b2f4b;
+  font-weight: 700;
+}

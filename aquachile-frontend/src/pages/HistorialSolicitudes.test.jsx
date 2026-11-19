@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -32,8 +32,32 @@ describe('HistorialSolicitudes', () => {
     renderWithRouter();
     expect(await screen.findByText('Ana Pérez')).toBeInTheDocument();
     expect(screen.getByText('Luis Soto')).toBeInTheDocument();
-    expect(screen.getByText('Pendiente')).toBeInTheDocument();
-    expect(screen.getByText('Completo')).toBeInTheDocument();
+    // Se busca dentro de la tabla: el filtro de estado también contiene estos textos
+    const tabla = within(screen.getByRole('table'));
+    expect(tabla.getByText('Pendiente')).toBeInTheDocument();
+    expect(tabla.getByText('Completo')).toBeInTheDocument();
+  });
+
+  it('filtra por estado en el backend', async () => {
+    // HistorialSolicitudes
+    // Consulta /solicitudes?estado=EN_PAUSA
+    const user = userEvent.setup();
+    renderWithRouter();
+    await user.selectOptions(screen.getByLabelText('Filtrar por estado'), 'EN_PAUSA');
+    await waitFor(() => expect(auth.api).toHaveBeenCalledWith('/solicitudes?estado=EN_PAUSA'));
+  });
+
+  it('muestra la fecha de la entrevista agendada', async () => {
+    // HistorialSolicitudes
+    // La fila con entrevista muestra su fecha; una abierta sin entrevista, "Sin agendar"
+    auth.api.mockResolvedValue([
+      { ...solicitudes[0], entrevistaInicio: '2030-01-10T13:00:00Z' },
+      { ...solicitudes[1], estado: 'EN_PAUSA' },
+    ]);
+    renderWithRouter();
+    await screen.findByText('Ana Pérez');
+    expect(screen.getByText(/2030/)).toBeInTheDocument();
+    expect(screen.getByText('Sin agendar')).toBeInTheDocument();
   });
 
   it('muestra un mensaje si no hay resultados', async () => {

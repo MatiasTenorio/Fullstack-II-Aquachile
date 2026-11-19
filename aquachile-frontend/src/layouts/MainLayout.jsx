@@ -1,11 +1,36 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ETIQUETA_ROL } from '../data/catalogos';
-import logoBlanco from '../assets/aquachile-white-logo.png'; // ajusta el nombre si lo guardaste distinto
+import { ETIQUETA_ROL, ROLES, rutaInicio } from '../data/catalogos';
+import logoBlanco from '../assets/aquachile-white-logo.png';
+import './MainLayout.css';
+
+// Enlaces de la barra lateral que ve cada rol. "exacto" evita que /solicitudes quede
+// marcado como activo cuando se está en /solicitudes/nueva.
+const INICIO = { to: '/dashboard', texto: 'Inicio', icono: 'bi-house-door' };
+const MENU = {
+  [ROLES.ANALISTA]: [
+    INICIO,
+    { to: '/solicitudes', texto: 'Solicitudes', icono: 'bi-card-list', exacto: true },
+    { to: '/solicitudes/nueva', texto: 'Nueva solicitud', icono: 'bi-plus-circle' },
+    { to: '/candidatos', texto: 'Candidatos', icono: 'bi-people' },
+    { to: '/calendario', texto: 'Calendario', icono: 'bi-calendar3' },
+  ],
+  [ROLES.EVALUADOR]: [
+    INICIO,
+    { to: '/solicitudes', texto: 'Mis solicitudes', icono: 'bi-card-list' },
+    { to: '/calendario', texto: 'Calendario', icono: 'bi-calendar3' },
+  ],
+  [ROLES.ADMIN]: [
+    INICIO,
+    { to: '/usuarios', texto: 'Usuarios', icono: 'bi-person-gear' },
+    { to: '/acciones', texto: 'Historial de acciones', icono: 'bi-clock-history' },
+  ],
+};
 
 function MainLayout() {
   const { usuarioActual, logout } = useAuth();
   const navigate = useNavigate();
+  const enlaces = MENU[usuarioActual?.rol] ?? [];
 
   const cerrarSesion = () => {
     logout();
@@ -13,39 +38,38 @@ function MainLayout() {
   };
 
   return (
-    <div className="d-flex flex-column min-vh-100" style={{ backgroundColor: '#FFFFFF' }}>
-      <header
-        className="d-flex align-items-center justify-content-between px-4 py-2"
-        style={{ backgroundColor: '#445664' }}
-      >
-        <Link to="/solicitudes" className="d-flex align-items-center text-decoration-none">
-          <img src={logoBlanco} alt="AquaChile" style={{ height: '32px' }} />
+    <div className="app-layout">
+      <aside className="app-sidebar">
+        <Link to={rutaInicio(usuarioActual?.rol)} className="app-sidebar-logo">
+          <img src={logoBlanco} alt="AquaChile" />
         </Link>
 
-        <div className="d-flex align-items-center gap-4">
-          <div className="d-flex align-items-center gap-2" style={{ color: '#FFFFFF' }}>
-            <div
-              className="rounded-circle d-flex align-items-center justify-content-center"
-              style={{ width: '28px', height: '28px', backgroundColor: '#FFFFFF', color: '#445664' }}
+        <nav className="app-sidebar-nav" aria-label="Menú principal">
+          {enlaces.map((enlace) => (
+            <NavLink
+              key={enlace.to}
+              to={enlace.to}
+              end={enlace.exacto}
+              className={({ isActive }) => `app-sidebar-enlace ${isActive ? 'activo' : ''}`}
             >
-              👤
-            </div>
-            <div className="d-flex flex-column lh-sm">
-              <span>{usuarioActual?.nombre}</span>
-              <small style={{ opacity: 0.75 }}>{ETIQUETA_ROL[usuarioActual?.rol] ?? usuarioActual?.rol}</small>
-            </div>
+              <i className={`bi ${enlace.icono}`} aria-hidden="true"></i>
+              {enlace.texto}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="app-sidebar-usuario">
+          <div className="mb-2">
+            <div className="nombre">{usuarioActual?.nombre}</div>
+            <div className="rol">{ETIQUETA_ROL[usuarioActual?.rol] ?? usuarioActual?.rol}</div>
           </div>
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-light"
-            onClick={cerrarSesion}
-          >
-            Cerrar sesión
+          <button type="button" className="btn btn-sm btn-outline-light w-100" onClick={cerrarSesion}>
+            <i className="bi bi-box-arrow-right" aria-hidden="true"></i> Cerrar sesión
           </button>
         </div>
-      </header>
+      </aside>
 
-      <main className="flex-grow-1">
+      <main className="app-contenido">
         <Outlet />
       </main>
     </div>

@@ -17,9 +17,55 @@ El frontend se conecta al backend (Spring Boot) por HTTP. No guarda datos propio
 
 ## Cómo ejecutarlo
 
+<<<<<<< HEAD
 Desde la carpeta `aquachile-frontend`:
 
 ```
+=======
+| Capa | Tecnología |
+|---|---|
+| Frontend | React (Vite) + Bootstrap 5 |
+| Routing | React Router |
+| Backend | Spring Boot |
+| Base de datos | PostgreSQL |
+| Testing frontend | Vitest + Testing Library |
+
+## Alcance funcional
+
+- Registro, edición y listado de candidatos
+- Creación, listado, filtro y detalle de solicitudes de evaluación
+- Registro de resultado y actualización de estado de una evaluación
+- Dashboard con indicadores generales del proceso
+- Roles:
+  - **Analista de Reclutamiento:** registra y edita candidatos, crea las solicitudes y asigna al evaluador responsable.
+  - **Profesional Evaluador:** ve solo las solicitudes que tiene asignadas, cambia su estado y sube el informe.
+  - **Administrador:** crea usuarios, asigna roles y activa o desactiva cuentas.
+
+Estados del flujo: `Pendiente` → `En proceso` → `Finalizada`
+
+## Correo y códigos de contraseña
+
+Las contraseñas se definen y restablecen con un código de 6 dígitos enviado por correo (pantalla "¿Olvidaste tu contraseña o es tu primer ingreso?"). Una cuenta recién creada por el administrador no tiene contraseña: su dueño la define con ese mismo flujo.
+
+- **Modo desarrollo (por defecto):** no se envía ningún correo; el código aparece en la consola del backend.
+- **Gmail:** en `aquachile-backend/src/main/resources/application-local.properties` (ignorado por git) agregar `app.mail.enabled=true`, `spring.mail.username=<cuenta de Gmail>` y `spring.mail.password=<contraseña de aplicación de Google>`. Con Docker se usan las variables `MAIL_ENABLED`, `MAIL_USERNAME` y `MAIL_PASSWORD`.
+
+## Google Calendar
+
+Cada evaluador puede conectar su cuenta de Google para que sus entrevistas se copien a su Google Calendar. Está desactivado por defecto. La guía para activarlo está en [doc/google-calendar.md](doc/google-calendar.md).
+
+## Requisitos previos
+
+- Node.js 18 o superior
+- npm
+
+
+## Instalación y ejecución
+
+```bash
+git clone <url-del-repositorio>
+cd aquachile-frontend
+>>>>>>> ecde63f (Feat (Develop: AquaChile App v1.5)
 npm install
 npm run dev
 ```

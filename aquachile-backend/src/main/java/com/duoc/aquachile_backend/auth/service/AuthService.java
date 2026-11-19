@@ -1,5 +1,7 @@
 package com.duoc.aquachile_backend.auth.service;
 
+import com.duoc.aquachile_backend.auditoria.RegistroAcciones;
+import com.duoc.aquachile_backend.auditoria.TipoAccion;
 import com.duoc.aquachile_backend.auth.Usuario;
 import com.duoc.aquachile_backend.auth.UsuarioRepository;
 import com.duoc.aquachile_backend.auth.dto.LoginRequest;
@@ -26,14 +28,17 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
     private final Duration expiracion;
+    private final RegistroAcciones registro;
 
     public AuthService(UsuarioRepository usuarioRepository,
                        PasswordEncoder passwordEncoder,
                        JwtEncoder jwtEncoder,
+                     RegistroAcciones registro,
                        @Value("${app.jwt.expiration-minutes}") long expirationMinutes) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtEncoder = jwtEncoder;
+        this.registro = registro;
         this.expiracion = Duration.ofMinutes(expirationMinutes);
     }
 
@@ -59,6 +64,7 @@ public class AuthService {
                 .encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
                 .getTokenValue();
 
+        registro.registrar(usuario.getId(), TipoAccion.SESION_INICIADA, "Inició sesión", null, null);
         return new LoginResponse(token, "Bearer", expiracion.toSeconds(), UsuarioResponse.from(usuario));
     }
 

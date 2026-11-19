@@ -88,9 +88,3 @@ export function guardarArchivo(blob, nombre) {
   enlace.remove();
   URL.revokeObjectURL(url);
 }
-
-// Formulario psicolaboral: lo completa el candidato, no requiere sesión.
-// No se define Content-Type: el navegador lo arma con el límite (boundary) del multipart.
-export function enviarSolicitudPublica(formData) {
-  return apiFetch('/public/solicitudes', { method: 'POST', body: formData });
-}

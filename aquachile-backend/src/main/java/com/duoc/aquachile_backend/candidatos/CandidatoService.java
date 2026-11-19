@@ -1,5 +1,8 @@
 package com.duoc.aquachile_backend.candidatos;
 
+import com.duoc.aquachile_backend.auditoria.RegistroAcciones;
+import com.duoc.aquachile_backend.auditoria.TipoAccion;
+import com.duoc.aquachile_backend.auth.UsuarioActual;
 import com.duoc.aquachile_backend.solicitud.SolicitudRepository;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +19,7 @@ public class CandidatoService {
 
     private final CandidatoRepository candidatoRepository;
     private final SolicitudRepository solicitudRepository;
+    private final RegistroAcciones registro;
 
     @Transactional(readOnly = true)
     public List<CandidatoResponse> listar(String nombre) {
@@ -31,45 +35,56 @@ public class CandidatoService {
     }
 
     @Transactional
-    public CandidatoResponse crear(CandidatoRequest request) {
-        return CandidatoResponse.from(crearEntidad(request));
-    }
-
-    /** Lo usa tambien el servicio de solicitudes cuando el candidato llega junto con la solicitud. */
-    @Transactional
-    public Candidato crearEntidad(CandidatoRequest request) {
+    public CandidatoResponse crear(CandidatoRequest request, UsuarioActual actual) {
+        verificarCorreoLibre(request.correo(), null);
         Candidato candidato = new Candidato();
         aplicar(candidato, request);
-        return candidatoRepository.save(candidato);
-    }
-
-    /** Reutiliza al candidato que ya se registro con el mismo correo; si no existe (o no hay correo), crea uno nuevo. */
-    @Transactional
-    public Candidato obtenerOCrear(CandidatoRequest request) {
-        String correo = limpiar(request.correo());
-        if (correo != null) {
-            Optional<Candidato> existente = candidatoRepository.findFirstByCorreoIgnoreCaseOrderByIdAsc(correo);
-            if (existente.isPresent()) {
-                return existente.get();
-            }
-        }
-        return crearEntidad(request);
+        Candidato guardado = candidatoRepository.save(candidato);
+        registro.registrar(actual, TipoAccion.CANDIDATO_REGISTRADO, "Registró al candidato " + describir(guardado));
+        return CandidatoResponse.from(guardado);
     }
 
     @Transactional
-    public CandidatoResponse actualizar(Long id, CandidatoRequest request) {
+    public CandidatoResponse actualizar(Long id, CandidatoRequest request, UsuarioActual actual) {
         Candidato candidato = buscarEntidad(id);
+        verificarCorreoLibre(request.correo(), id);
+        String antes = describir(candidato);
         aplicar(candidato, request);
+        String despues = describir(candidato);
+        registro.registrar(actual, TipoAccion.CANDIDATO_EDITADO, antes.equals(despues)
+                ? "Guardó sin cambios al candidato " + despues
+                : "Editó al candidato " + antes + "; quedó como " + despues);
         return CandidatoResponse.from(candidato);
     }
 
+    /** "Ana Perez (ana@correo.cl, +56 9 1111 1111)" para las descripciones del historial de acciones. */
+    private String describir(Candidato c) {
+        String contacto = java.util.stream.Stream.of(c.getCorreo(), c.getTelefono())
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.joining(", "));
+        return c.getNombre() + (contacto.isEmpty() ? "" : " (" + contacto + ")");
+    }
+
+    /** Dos candidatos no pueden compartir correo; idPropio es el candidato que se esta editando (o null al crear). */
+    private void verificarCorreoLibre(String correo, Long idPropio) {
+        String limpio = limpiar(correo);
+        if (limpio == null) {
+            return;
+        }
+        Optional<Candidato> existente = candidatoRepository.findFirstByCorreoIgnoreCaseOrderByIdAsc(limpio);
+        if (existente.isPresent() && !existente.get().getId().equals(idPropio)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un candidato registrado con ese correo");
+        }
+    }
+
     @Transactional
-    public void eliminar(Long id) {
+    public void eliminar(Long id, UsuarioActual actual) {
         Candidato candidato = buscarEntidad(id);
         if (solicitudRepository.existsByCandidatoId(id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "No se puede eliminar un candidato que tiene solicitudes de evaluacion");
         }
+        registro.registrar(actual, TipoAccion.CANDIDATO_ELIMINADO, "Eliminó al candidato " + describir(candidato));
         candidatoRepository.delete(candidato);
     }
 

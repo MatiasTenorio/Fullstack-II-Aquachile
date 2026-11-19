@@ -1,0 +1,15 @@
+/* Estilos compartidos por los formularios de acción (entrevista, motivo) y los títulos de sección. */
+.seccion-titulo {
+  color: #1b2f4b;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 0.6rem;
+}
+
+.formulario-accion {
+  background: #f4f7f9;
+  border: 1px solid #8fb0c4;
+  border-radius: 6px;
+  margin-top: 1rem;
+  padding: 0.8rem 0.9rem;
+}

@@ -33,8 +33,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/actuator/health", "/error").permitAll()
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                // Formulario psicolaboral: lo completa el candidato, sin iniciar sesion
-                .requestMatchers(HttpMethod.POST, "/public/solicitudes").permitAll()
+                // Regreso desde Google despues de autorizar el calendario (redireccion del navegador, sin token)
+                .requestMatchers(HttpMethod.GET, "/google/calendar/callback").permitAll()
+                // Definir o restablecer la contrasena con codigo OTP: quien lo necesita aun no tiene sesion
+                .requestMatchers(HttpMethod.POST, "/auth/password/codigo", "/auth/password/restablecer").permitAll()
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth -> oauth
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));

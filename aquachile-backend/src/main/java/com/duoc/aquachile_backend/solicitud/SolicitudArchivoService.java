@@ -1,5 +1,7 @@
 package com.duoc.aquachile_backend.solicitud;
 
+import com.duoc.aquachile_backend.auditoria.RegistroAcciones;
+import com.duoc.aquachile_backend.auditoria.TipoAccion;
 import com.duoc.aquachile_backend.auth.UsuarioActual;
 import com.duoc.aquachile_backend.drive.AlmacenArchivos;
 import com.duoc.aquachile_backend.drive.ArchivoDescargado;
@@ -22,6 +24,7 @@ public class SolicitudArchivoService {
     private final SolicitudService solicitudService;
     private final CarpetaCandidatoService carpetaCandidatoService;
     private final AlmacenArchivos almacen;
+    private final RegistroAcciones registro;
 
     /** Sube el CV a la carpeta del candidato; si ya habia uno, lo reemplaza. */
     @Transactional
@@ -41,6 +44,16 @@ public class SolicitudArchivoService {
             almacen.eliminar(anterior);
         }
         return solicitudService.aResponse(solicitud);
+    }
+
+    /** Reemplazo del CV desde el detalle de la solicitud (queda en el historial de acciones). */
+    @Transactional
+    public SolicitudResponse reemplazarCv(Long solicitudId, MultipartFile archivo, UsuarioActual actual) {
+        SolicitudResponse respuesta = subirCv(solicitudId, archivo);
+        Solicitud solicitud = solicitudService.buscarEntidad(solicitudId);
+        registro.registrar(actual, TipoAccion.CV_SUBIDO,
+                "Subió un CV nuevo a la solicitud " + RegistroAcciones.referencia(solicitud), solicitud);
+        return respuesta;
     }
 
     @Transactional(readOnly = true)

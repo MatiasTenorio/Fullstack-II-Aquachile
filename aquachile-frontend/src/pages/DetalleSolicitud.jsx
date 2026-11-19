@@ -3,26 +3,24 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ApiError, guardarArchivo } from "../services/api";
 import {
+  ESTADOS_CERRADOS,
+  ESTADOS_ENTREVISTA_UI,
   ESTADOS_UI,
+  ETIQUETA_MODALIDAD,
+  ROLES,
   ROLES_CAMBIAN_ESTADO,
-  SIGUIENTE_ESTADO,
 } from "../data/catalogos";
+import { formatearFecha, formatearFechaHora, formatearHora } from "../utils/fechas";
 import CvPreview from "../components/CvPreview";
+import EntrevistaForm from "../components/EntrevistaForm";
+import MotivoForm from "../components/MotivoForm";
+import HistorialEstados from "../components/HistorialEstados";
+import "../components/formularios.css";
 import "./DetalleSolicitud.css";
 
 const EXTENSIONES_INFORME = ["pdf", "doc", "docx"];
 const TAMANO_MAXIMO_INFORME = 5 * 1024 * 1024; // 5 MB, el mismo límite del backend
-
-function formatearFecha(iso) {
-  return iso ? new Date(`${iso}T00:00:00`).toLocaleDateString("es-CL") : "";
-}
-
-// Hora local de quien mira la pantalla, en formato 24 horas (ej: 03:20 o 15:45).
-function formatearHora(instante) {
-  return instante
-    ? new Date(instante).toLocaleTimeString("es-CL", { hour: "numeric", minute: "2-digit", hour12: false })
-    : "";
-}
+const COLOR_BOTON = { backgroundColor: '#445664', color: '#FFFFFF' };
 
 export default function DetalleSolicitud() {
   const { id } = useParams();
@@ -36,17 +34,41 @@ export default function DetalleSolicitud() {
   const [aviso, setAviso] = useState(null); // { tipo: "warning" | "success", texto }
   const [guardando, setGuardando] = useState(false);
   const [subiendoInforme, setSubiendoInforme] = useState(false);
+  // Formulario abierto en este momento: "agendar" | "reprogramar" | "pausar" | "cancelar" | null
+  const [accion, setAccion] = useState(null);
 
   // { blob, nombre, url } cuando el CV ya se descargó; errorCv si falló.
   const [cv, setCv] = useState(null);
   const [cargandoCv, setCargandoCv] = useState(false);
   const [errorCv, setErrorCv] = useState("");
 
+  // Solo el analista asigna o cambia el evaluador responsable.
+  const esAnalista = usuarioActual?.rol === ROLES.ANALISTA;
+  const [evaluadores, setEvaluadores] = useState([]);
+  const [evaluadorElegido, setEvaluadorElegido] = useState("");
+  const [asignando, setAsignando] = useState(false);
+
+  useEffect(() => {
+    if (!esAnalista) return undefined;
+    let cancelado = false;
+    api("/usuarios/evaluadores")
+      .then((lista) => {
+        if (!cancelado && Array.isArray(lista)) setEvaluadores(lista);
+      })
+      .catch(() => {
+        // sin la lista no se muestra el selector; el resto de la pantalla funciona igual
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [api, esAnalista]);
+
   useEffect(() => {
     let cancelado = false;
     setCargando(true);
     setErrorCarga("");
     setSolicitud(null);
+    setAccion(null);
     api(`/solicitudes/${id}`)
       .then((datos) => {
         if (!cancelado) setSolicitud(datos);
@@ -120,14 +142,88 @@ export default function DetalleSolicitud() {
     .join("")
     .toUpperCase();
 
-  const estado = ESTADOS_UI[solicitud.estado] ?? { etiqueta: solicitud.estado, bg: "#e9ecef", text: "#495057", clase: "" };
-  const siguiente = SIGUIENTE_ESTADO[solicitud.estado];
-  const rolPuedeGestionar = ROLES_CAMBIAN_ESTADO.includes(usuarioActual?.rol);
-  const puedeCambiarEstado = rolPuedeGestionar && siguiente;
+  const estadoActual = solicitud.estado;
+  const estado = ESTADOS_UI[estadoActual] ?? { etiqueta: estadoActual, bg: "#e9ecef", text: "#495057", clase: "" };
+  const cerrada = ESTADOS_CERRADOS.includes(estadoActual);
   const informeDisponible = solicitud.informeDisponible;
-  const puedeSubirInforme = rolPuedeGestionar && solicitud.estado !== "FINALIZADO";
-  // Para completar la solicitud hace falta el informe del psicólogo.
-  const faltaInforme = siguiente === "FINALIZADO" && !informeDisponible;
+
+  // Entrevistas: la vigente es la que sigue agendada. Si no hay, se muestra como registro
+  // la última realizada y, si tampoco hay, la más reciente (que estará cancelada).
+  const entrevistas = solicitud.entrevistas ?? [];
+  const historial = solicitud.historial ?? [];
+  const entrevistaVigente = entrevistas.find((e) => e.estado === "AGENDADA") ?? null;
+  const entrevistaMostrada = entrevistaVigente
+    ?? entrevistas.find((e) => e.estado === "REALIZADA")
+    ?? entrevistas[0]
+    ?? null;
+  const entrevistaYaOcurrio = entrevistaVigente && new Date(entrevistaVigente.inicio) <= new Date();
+
+  // Acciones del evaluador responsable según el estado de la solicitud.
+  const esEvaluador = ROLES_CAMBIAN_ESTADO.includes(usuarioActual?.rol);
+  const abierta = estadoActual === "PENDIENTE" || estadoActual === "EN_PROCESO";
+  const puedeAgendar = esEvaluador && abierta && !entrevistaVigente;
+  const puedeSubirInforme = esEvaluador && estadoActual === "EN_PROCESO";
+  const puedeFinalizar = esEvaluador && estadoActual === "EN_PROCESO";
+  const puedePausar = esEvaluador && abierta;
+  const puedeReanudar = esEvaluador && estadoActual === "EN_PAUSA";
+  const puedeCancelar = esEvaluador && !cerrada;
+  const puedeAsignar = esAnalista && !cerrada && evaluadores.length > 0;
+
+  // Motivo con el que se pausó o canceló: es el comentario del registro que la dejó en ese estado.
+  const registroEstado = (estadoActual === "EN_PAUSA" || estadoActual === "CANCELADO")
+    ? historial.find((h) => h.estadoNuevo === estadoActual && h.estadoAnterior !== estadoActual)
+    : null;
+
+  // Ejecuta una llamada que devuelve la solicitud actualizada y muestra el resultado.
+  const ejecutar = async (llamada, mensajeExito, mensajeError) => {
+    setAviso(null);
+    setGuardando(true);
+    try {
+      const actualizada = await llamada();
+      setSolicitud(actualizada);
+      setAccion(null);
+      if (mensajeExito) setAviso({ tipo: "success", texto: mensajeExito });
+    } catch (e) {
+      setAviso({ tipo: "warning", texto: e instanceof ApiError ? e.message : mensajeError });
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const enviarJson = (ruta, method, cuerpo) =>
+    api(ruta, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cuerpo),
+    });
+
+  const cambiarEstado = (nuevoEstado, motivo, mensajeExito) =>
+    ejecutar(
+      () => enviarJson(`/solicitudes/${id}/estado`, "PATCH", motivo ? { estado: nuevoEstado, motivo } : { estado: nuevoEstado }),
+      mensajeExito,
+      "No se pudo actualizar el estado."
+    );
+
+  const agendarEntrevista = (datos) =>
+    ejecutar(
+      () => enviarJson(`/solicitudes/${id}/entrevistas`, "POST", datos),
+      "Entrevista agendada. La solicitud quedó En Proceso.",
+      "No se pudo agendar la entrevista."
+    );
+
+  const reprogramarEntrevista = (datos) =>
+    ejecutar(
+      () => enviarJson(`/solicitudes/${id}/entrevistas/${entrevistaVigente.id}`, "PUT", datos),
+      "Entrevista reprogramada.",
+      "No se pudo reprogramar la entrevista."
+    );
+
+  const marcarRealizada = () =>
+    ejecutar(
+      () => api(`/solicitudes/${id}/entrevistas/${entrevistaVigente.id}/realizada`, { method: "PATCH" }),
+      "Entrevista marcada como realizada.",
+      "No se pudo actualizar la entrevista."
+    );
 
   const seleccionarInforme = async (e) => {
     const archivo = e.target.files[0];
@@ -166,20 +262,18 @@ export default function DetalleSolicitud() {
     }
   };
 
-  const actualizarEstado = async () => {
+  const asignarEvaluador = async () => {
     setAviso(null);
-    setGuardando(true);
+    setAsignando(true);
     try {
-      const actualizada = await api(`/solicitudes/${id}/estado`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ estado: siguiente }),
-      });
+      const actualizada = await enviarJson(`/solicitudes/${id}`, "PATCH", { responsableId: Number(evaluadorElegido) });
       setSolicitud(actualizada);
+      setEvaluadorElegido("");
+      setAviso({ tipo: "success", texto: `Solicitud asignada a ${actualizada.responsable.nombre}.` });
     } catch (e) {
-      setAviso({ tipo: "warning", texto: e instanceof ApiError ? e.message : "No se pudo actualizar el estado." });
+      setAviso({ tipo: "warning", texto: e instanceof ApiError ? e.message : "No se pudo asignar el evaluador." });
     } finally {
-      setGuardando(false);
+      setAsignando(false);
     }
   };
 
@@ -193,7 +287,7 @@ export default function DetalleSolicitud() {
               style={{ backgroundColor: '#8fb0c5' }}>
                 <button
                   className="btn btn-sm position-absolute start-0 ms-30"
-                  style={{ backgroundColor: '#445664', color: '#FFFFFF' }}
+                  style={COLOR_BOTON}
                   onClick={() => navigate("/solicitudes")}
                 >
                   Volver
@@ -217,18 +311,172 @@ export default function DetalleSolicitud() {
                 <li>Fecha de solicitud: {formatearFecha(solicitud.fechaSolicitud)}</li>
                 {solicitud.creadaEn && <li>Hora de envío: {formatearHora(solicitud.creadaEn)}</li>}
                 <li>Responsable: {solicitud.responsable ? solicitud.responsable.nombre : "Sin asignar"}</li>
+                {solicitud.analista && <li>Creada por: {solicitud.analista.nombre}</li>}
                 <li>Informe: {informeDisponible ? solicitud.informeNombreArchivo ?? "Adjunto" : "Pendiente"}</li>
                 {solicitud.solicitudesDelCandidato > 1 && (
                   <li className="aviso-repetido">
-                    Este correo ha enviado <strong>{solicitud.solicitudesDelCandidato}</strong> solicitudes
+                    Este candidato tiene <strong>{solicitud.solicitudesDelCandidato}</strong> solicitudes
                   </li>
                 )}
               </ul>
+
+              {registroEstado && (
+                <div className="aviso-estado" style={{ backgroundColor: estado.bg, color: estado.text }}>
+                  <strong>{estadoActual === "EN_PAUSA" ? "Solicitud en pausa" : "Solicitud cancelada"}</strong>
+                  {" "}por {registroEstado.usuarioNombre} el {formatearFechaHora(registroEstado.fecha)}.
+                  {registroEstado.comentario && <div>Motivo: {registroEstado.comentario}</div>}
+                </div>
+              )}
+
+              {puedeAsignar && (
+                <div className="d-flex align-items-end gap-2 mt-3">
+                  <div className="flex-grow-1">
+                    <label htmlFor="evaluador" className="form-label small mb-1">
+                      {solicitud.responsable ? "Cambiar evaluador responsable" : "Asignar evaluador responsable"}
+                    </label>
+                    <select
+                      id="evaluador"
+                      className="form-select form-select-sm"
+                      value={evaluadorElegido}
+                      onChange={(e) => setEvaluadorElegido(e.target.value)}
+                    >
+                      <option value="">Seleccione un evaluador</option>
+                      {evaluadores
+                        .filter((u) => u.id !== solicitud.responsable?.id)
+                        .map((u) => (
+                          <option key={u.id} value={u.id}>{u.nombre}</option>
+                        ))}
+                    </select>
+                    {entrevistaVigente && (
+                      <div className="form-text">Al cambiar de evaluador se cancela la entrevista agendada.</div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    style={COLOR_BOTON}
+                    disabled={!evaluadorElegido || asignando}
+                    onClick={asignarEvaluador}
+                  >
+                    {asignando ? "Asignando..." : "Asignar"}
+                  </button>
+                </div>
+              )}
+
+              <div className="seccion">
+                <h3 className="seccion-titulo">Entrevista</h3>
+                {!entrevistaMostrada && (
+                  <p className="small text-muted mb-0">
+                    {estadoActual === "PENDIENTE"
+                      ? "Aún no hay entrevista. Al agendarla, la solicitud pasa a En Proceso."
+                      : "No hay una entrevista agendada."}
+                  </p>
+                )}
+                {entrevistaMostrada && accion !== "reprogramar" && (
+                  <div className="entrevista-tarjeta">
+                    <div className="d-flex justify-content-between align-items-start gap-2">
+                      <div>
+                        <div className="entrevista-fecha">
+                          {formatearFechaHora(entrevistaMostrada.inicio)} a {formatearHora(entrevistaMostrada.fin)}
+                        </div>
+                        <div>
+                          {ETIQUETA_MODALIDAD[entrevistaMostrada.modalidad] ?? entrevistaMostrada.modalidad}
+                          {entrevistaMostrada.ubicacion && <> · {entrevistaMostrada.ubicacion}</>}
+                        </div>
+                        {entrevistaMostrada.enGoogleCalendar && (
+                          <div className="small text-muted">
+                            <i className="bi bi-google" aria-hidden="true"></i> En Google Calendar
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className="badge rounded-pill px-3 py-2"
+                        style={{
+                          backgroundColor: ESTADOS_ENTREVISTA_UI[entrevistaMostrada.estado]?.bg,
+                          color: ESTADOS_ENTREVISTA_UI[entrevistaMostrada.estado]?.text,
+                        }}
+                      >
+                        {ESTADOS_ENTREVISTA_UI[entrevistaMostrada.estado]?.etiqueta ?? entrevistaMostrada.estado}
+                      </span>
+                    </div>
+                    {esEvaluador && entrevistaVigente && !accion && (
+                      <div className="d-flex gap-2 mt-2">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          disabled={guardando}
+                          onClick={() => { setAviso(null); setAccion("reprogramar"); }}
+                        >
+                          Reprogramar
+                        </button>
+                        {entrevistaYaOcurrio && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            disabled={guardando}
+                            onClick={marcarRealizada}
+                          >
+                            Marcar como realizada
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {entrevistas.length > 1 && accion !== "reprogramar" && (
+                  <p className="small text-muted mt-2 mb-0">
+                    Entrevistas anteriores: {entrevistas
+                      .filter((e) => e.id !== entrevistaMostrada.id)
+                      .map((e) => `${formatearFechaHora(e.inicio)} (${(ESTADOS_ENTREVISTA_UI[e.estado]?.etiqueta ?? e.estado).toLowerCase()})`)
+                      .join(", ")}
+                  </p>
+                )}
+              </div>
+
+              {accion === "agendar" && (
+                <EntrevistaForm enviando={guardando} onGuardar={agendarEntrevista} onCancelar={() => setAccion(null)} />
+              )}
+              {accion === "reprogramar" && entrevistaVigente && (
+                <EntrevistaForm
+                  entrevista={entrevistaVigente}
+                  enviando={guardando}
+                  onGuardar={reprogramarEntrevista}
+                  onCancelar={() => setAccion(null)}
+                />
+              )}
+              {accion === "pausar" && (
+                <MotivoForm
+                  titulo="Pausar solicitud"
+                  descripcion={entrevistaVigente
+                    ? "La solicitud queda detenida hasta que la reanudes. La entrevista agendada se cancela."
+                    : "La solicitud queda detenida hasta que la reanudes."}
+                  etiquetaBoton="Pausar solicitud"
+                  enviando={guardando}
+                  onConfirmar={(motivo) => cambiarEstado("EN_PAUSA", motivo, "Solicitud en pausa.")}
+                  onCancelar={() => setAccion(null)}
+                />
+              )}
+              {accion === "cancelar" && (
+                <MotivoForm
+                  titulo="Cancelar solicitud"
+                  descripcion="Esta acción es definitiva: una solicitud cancelada no se puede reabrir."
+                  etiquetaBoton="Cancelar solicitud"
+                  peligro
+                  enviando={guardando}
+                  onConfirmar={(motivo) => cambiarEstado("CANCELADO", motivo, "Solicitud cancelada.")}
+                  onCancelar={() => setAccion(null)}
+                />
+              )}
+
+              <div className="seccion">
+                <h3 className="seccion-titulo">Historial</h3>
+                <HistorialEstados historial={historial} />
+              </div>
             </div>
 
-            {aviso && <div className={`alert alert-${aviso.tipo} py-2 mx-3`}>{aviso.texto}</div>}
-            {puedeCambiarEstado && faltaInforme && !aviso && (
-              <p className="aviso-informe">Sube el informe del psicólogo para poder completar la solicitud.</p>
+            {aviso && <div className={`alert alert-${aviso.tipo} py-2 mx-3 mt-2 mb-0`}>{aviso.texto}</div>}
+            {puedeFinalizar && !informeDisponible && !aviso && (
+              <p className="aviso-informe mt-2">Sube el informe del psicólogo para poder completar la solicitud.</p>
             )}
 
             <footer className="panel-acciones">
@@ -238,16 +486,26 @@ export default function DetalleSolicitud() {
               >
                 {estado.etiqueta}
               </span>
-              {puedeCambiarEstado && (
+              {puedeAgendar && (
                 <button
                   type="button"
-                  className="btn btn-sm ActualizarEstado"
-                  style={{ backgroundColor: '#445664', color: '#FFFFFF' }}
-                  disabled={guardando || faltaInforme}
-                  title={faltaInforme ? "Primero sube el informe del psicólogo" : undefined}
-                  onClick={actualizarEstado}
+                  className="btn btn-sm"
+                  style={COLOR_BOTON}
+                  disabled={guardando || accion === "agendar"}
+                  onClick={() => { setAviso(null); setAccion("agendar"); }}
                 >
-                  {guardando ? "Actualizando..." : "Actualizar Estado"}
+                  Agendar entrevista
+                </button>
+              )}
+              {puedeReanudar && (
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  style={COLOR_BOTON}
+                  disabled={guardando}
+                  onClick={() => cambiarEstado(solicitud.estadoPrevio ?? "PENDIENTE", null, "Solicitud reanudada.")}
+                >
+                  {guardando ? "Reanudando..." : "Reanudar solicitud"}
                 </button>
               )}
               {puedeSubirInforme && (
@@ -262,7 +520,7 @@ export default function DetalleSolicitud() {
                   <button
                     type="button"
                     className="btn btn-sm SubirInforme"
-                    style={{ backgroundColor: '#445664', color: '#FFFFFF' }}
+                    style={COLOR_BOTON}
                     disabled={subiendoInforme}
                     onClick={() => inputInforme.current?.click()}
                   >
@@ -270,11 +528,43 @@ export default function DetalleSolicitud() {
                   </button>
                 </>
               )}
+              {puedeFinalizar && (
+                <button
+                  type="button"
+                  className="btn btn-sm ActualizarEstado"
+                  style={COLOR_BOTON}
+                  disabled={guardando || !informeDisponible}
+                  title={!informeDisponible ? "Primero sube el informe del psicólogo" : undefined}
+                  onClick={() => cambiarEstado("FINALIZADO", null, "Solicitud finalizada.")}
+                >
+                  Finalizar solicitud
+                </button>
+              )}
+              {puedePausar && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  disabled={guardando || accion === "pausar"}
+                  onClick={() => { setAviso(null); setAccion("pausar"); }}
+                >
+                  Pausar
+                </button>
+              )}
+              {puedeCancelar && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  disabled={guardando || accion === "cancelar"}
+                  onClick={() => { setAviso(null); setAccion("cancelar"); }}
+                >
+                  Cancelar solicitud
+                </button>
+              )}
               {informeDisponible && (
                 <button
                   type="button"
                   className="btn btn-sm DescargarInforme"
-                  style={{ backgroundColor: '#445664', color: '#FFFFFF' }}
+                  style={COLOR_BOTON}
                   onClick={descargarInforme}
                 >
                   Descargar informe
@@ -283,7 +573,7 @@ export default function DetalleSolicitud() {
               <button
                 type="button"
                 className="btn btn-sm CVDownload"
-                style={{ backgroundColor: '#445664', color: '#FFFFFF' }}
+                style={COLOR_BOTON}
                 disabled={!cv}
                 onClick={() => guardarArchivo(cv.blob, cv.nombre)}
               >

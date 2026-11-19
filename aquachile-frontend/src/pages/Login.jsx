@@ -1,7 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../services/api';
+import { rutaInicio } from '../data/catalogos';
+// Las imágenes se importan para que Vite las incluya al compilar (una ruta escrita a mano solo funciona en desarrollo)
+import fondo from '../assets/fondo-login.jpg';
+import logo from '../assets/aquachile-logo.png';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -20,8 +24,9 @@ function Login() {
     setError('');
     setEnviando(true);
     try {
-      await login(email.trim(), password);
-      navigate('/solicitudes');
+      const usuario = await login(email.trim(), password);
+      // Todos los roles parten en el dashboard
+      navigate(rutaInicio(usuario?.rol));
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError('Correo o contraseña incorrectos');
@@ -39,15 +44,15 @@ function Login() {
       style={{
         position: 'fixed',
         inset: 0,
-        background:'url(/src/assets/fondo-login.jpg) center/cover'
+        background: `url(${fondo}) center/cover`
       }}
     >
       <div className="card shadow p-4" style={{ maxWidth: '420px', width: '100%' }}>
         <div className="text-center mb-3">
-          <img src="/src/assets/aquachile-logo.png" alt="AquaChile" style={{ maxWidth: '220px' }} />
+          <img src={logo} alt="AquaChile" style={{ maxWidth: '220px' }} />
         </div>
         <p className="text-muted mb-4">
-          Inicia sesión para acceder a la lista de solicitudes
+          Inicia sesión para acceder al sistema
         </p>
 
         <form onSubmit={handleSubmit} noValidate>
@@ -89,6 +94,10 @@ function Login() {
             {enviando ? 'Ingresando...' : 'Ingresar'} <i className="bi bi-arrow-right"></i>
           </button>
         </form>
+
+        <div className="text-center mt-3">
+          <Link to="/restablecer-password">¿Olvidaste tu contraseña o es tu primer ingreso?</Link>
+        </div>
       </div>
     </div>
   );

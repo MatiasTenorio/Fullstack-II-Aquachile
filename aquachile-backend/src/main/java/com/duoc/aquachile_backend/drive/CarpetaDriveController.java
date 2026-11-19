@@ -16,7 +16,7 @@ public class CarpetaDriveController {
 
     /** Reintenta crear la carpeta de un candidato cuando Drive fallo al crearlo. */
     @PostMapping("/candidatos/{id}/carpeta-drive")
-    @PreAuthorize(Permisos.ANALISTA_O_ADMIN)
+    @PreAuthorize(Permisos.SOLO_ANALISTA)
     public CandidatoResponse crearCarpeta(@PathVariable Long id) {
         return carpetaCandidatoService.asegurarPorId(id);
     }

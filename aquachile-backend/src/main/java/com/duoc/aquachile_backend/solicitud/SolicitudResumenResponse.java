@@ -1,8 +1,9 @@
 package com.duoc.aquachile_backend.solicitud;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
-/** Fila del historial de solicitudes. */
+/** Fila del historial de solicitudes. entrevistaInicio es la entrevista agendada vigente, si la hay. */
 public record SolicitudResumenResponse(
         Long id,
         Long candidatoId,
@@ -13,9 +14,10 @@ public record SolicitudResumenResponse(
         LocalDate fechaSolicitud,
         EstadoSolicitud estado,
         String responsableNombre,
-        boolean cvDisponible) {
+        boolean cvDisponible,
+        Instant entrevistaInicio) {
 
-    public static SolicitudResumenResponse from(Solicitud s) {
+    public static SolicitudResumenResponse from(Solicitud s, Instant entrevistaInicio) {
         return new SolicitudResumenResponse(
                 s.getId(),
                 s.getCandidato().getId(),
@@ -26,6 +28,7 @@ public record SolicitudResumenResponse(
                 s.getFechaSolicitud(),
                 s.getEstado(),
                 s.getResponsable() != null ? s.getResponsable().getNombre() : null,
-                s.getCvDriveFileId() != null);
+                s.getCvDriveFileId() != null,
+                entrevistaInicio);
     }
 }

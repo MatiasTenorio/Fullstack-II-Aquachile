@@ -1,5 +1,7 @@
 package com.duoc.aquachile_backend.solicitud;
 
+import com.duoc.aquachile_backend.auditoria.RegistroAcciones;
+import com.duoc.aquachile_backend.auditoria.TipoAccion;
 import com.duoc.aquachile_backend.auth.UsuarioActual;
 import com.duoc.aquachile_backend.drive.AlmacenArchivos;
 import com.duoc.aquachile_backend.drive.ArchivoDescargado;
@@ -23,6 +25,7 @@ public class InformeService {
     private final SolicitudService solicitudService;
     private final CarpetaCandidatoService carpetaCandidatoService;
     private final AlmacenArchivos almacen;
+    private final RegistroAcciones registro;
 
     /**
      * Sube el informe del psicologo (PDF, DOC o DOCX) a la carpeta del candidato; si ya habia uno, lo reemplaza.
@@ -32,8 +35,10 @@ public class InformeService {
     public SolicitudResponse subir(Long solicitudId, MultipartFile archivo, UsuarioActual actual) {
         Solicitud solicitud = solicitudService.buscarEntidad(solicitudId);
         solicitudService.verificarAcceso(solicitud, actual);
-        if (solicitud.getEstado() == EstadoSolicitud.FINALIZADO) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "La solicitud ya esta finalizada");
+        // El informe se escribe despues de la entrevista: solo tiene sentido con la solicitud en proceso
+        if (solicitud.getEstado() != EstadoSolicitud.EN_PROCESO) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "El informe solo se puede subir mientras la solicitud esta en proceso");
         }
 
         String extension = ArchivoUtil.validar(archivo, FORMATOS_INFORME);
@@ -48,6 +53,8 @@ public class InformeService {
         if (anterior != null) {
             almacen.eliminar(anterior);
         }
+        registro.registrar(actual, TipoAccion.INFORME_SUBIDO, (anterior != null ? "Reemplazó el informe" : "Subió el informe")
+                + " de la solicitud " + RegistroAcciones.referencia(solicitud) + ": " + nombre, solicitud);
         return solicitudService.aResponse(solicitud);
     }
 
