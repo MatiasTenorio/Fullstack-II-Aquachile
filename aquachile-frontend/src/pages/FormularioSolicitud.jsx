@@ -208,6 +208,7 @@ function FormularioSolicitud() {
             ))}
           </select>
           {errores.responsableId && <div className="invalid-feedback">{errores.responsableId}</div>}
+          <div className="form-text">Al crear la solicitud, tú y el evaluador recibirán un aviso por correo.</div>
         </div>
 
         <div className="mb-4">

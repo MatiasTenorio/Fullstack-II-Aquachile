@@ -14,6 +14,9 @@ import com.duoc.aquachile_backend.entrevista.EntrevistaRepository;
 import com.duoc.aquachile_backend.entrevista.EntrevistaResponse;
 import com.duoc.aquachile_backend.entrevista.EstadoEntrevista;
 import com.duoc.aquachile_backend.googlecalendar.GoogleCalendarService;
+import com.duoc.aquachile_backend.notificaciones.DatosSolicitudCorreo;
+import com.duoc.aquachile_backend.notificaciones.EvaluadorReasignadoEvento;
+import com.duoc.aquachile_backend.notificaciones.SolicitudCreadaEvento;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
@@ -25,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -44,6 +48,7 @@ public class SolicitudService {
     private final HistorialEstadoRepository historialRepository;
     private final GoogleCalendarService googleCalendar;
     private final RegistroAcciones registro;
+    private final ApplicationEventPublisher eventos;
 
     /** Las fechas que se escriben en el historial van en hora de Chile. */
     private static final DateTimeFormatter FORMATO_FECHA_HORA =
@@ -70,6 +75,8 @@ public class SolicitudService {
                 "Solicitud creada y asignada a " + guardada.getResponsable().getNombre(), actual);
         registro.registrar(actual, TipoAccion.SOLICITUD_CREADA, "Creó la solicitud " + RegistroAcciones.referencia(guardada)
                 + " para el cargo " + guardada.getCargo() + ", asignada a " + guardada.getResponsable().getNombre(), guardada);
+        // Aviso por correo al analista y al evaluador; se envia recien cuando la solicitud quedo guardada
+        eventos.publishEvent(new SolicitudCreadaEvento(DatosSolicitudCorreo.de(guardada)));
         // Si Drive falla la solicitud igual se guarda; la carpeta se puede crear despues
         carpetaCandidatoService.intentarCrear(candidato);
         return aResponse(guardada);
@@ -125,6 +132,8 @@ public class SolicitudService {
         registro.registrar(actual, TipoAccion.EVALUADOR_ASIGNADO, "Asignó la solicitud "
                 + RegistroAcciones.referencia(solicitud) + " a " + nuevo.getNombre()
                 + (anterior != null ? " (antes: " + anterior.getNombre() + ")" : ""), solicitud);
+        eventos.publishEvent(new EvaluadorReasignadoEvento(DatosSolicitudCorreo.de(solicitud),
+                usuarioRepository.findById(actual.id()).map(Usuario::getNombre).orElse(actual.email())));
         return aResponse(solicitud);
     }
 
